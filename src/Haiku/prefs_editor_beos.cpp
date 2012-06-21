@@ -29,22 +29,24 @@
 #include <ctype.h>
 #include <fs_info.h>
 
+#include "about_window.h"
+#include "cdrom.h"
+#include "main.h"
 #include "prefs_editor.h"
 #include "prefs.h"
-#include "main.h"
-#include "cdrom.h"
-#include "xpram.h"
-#include "about_window.h"
+#include "rom_toolbox.h"
 #include "user_strings.h"
+#include "xpram.h"
 
 #include <AppKit.h>
 #include <InterfaceKit.h>
+#include <LayoutBuilder.h>
 #include <StorageKit.h>
 #include <SupportDefs.h>
 
 
 // Special colors
-const rgb_color fill_color = {216, 216, 216, 0};
+const rgb_color fill_color = ui_color(B_PANEL_BACKGROUND_COLOR);
 const rgb_color slider_fill_color = {102, 152, 255, 0};
 
 
@@ -62,6 +64,10 @@ const uint32 MSG_CREATE_VOLUME = 'crev';
 const uint32 MSG_REMOVE_VOLUME = 'remv';
 const uint32 MSG_ADD_VOLUME_PANEL = 'advp';
 const uint32 MSG_CREATE_VOLUME_PANEL = 'crvp';
+
+const uint32 MSG_SELECT_ROM = ' srb';
+const uint32 MSG_SELECT_ROM_PANEL = ' srp';
+
 const uint32 MSG_DEVICE_NAME = 'devn';
 const uint32 MSG_BOOT_ANY = 'bany';
 const uint32 MSG_BOOT_CDROM = 'bcdr';
@@ -219,6 +225,8 @@ private:
 	BView *CreatePaneMemory(void);
 	BView *CreatePaneRom(void);
 
+	void RefreshROMInfo();
+
 	uint32 ok_message;
 	bool send_quit_on_close;
 
@@ -238,10 +246,16 @@ private:
 	BCheckBox *idlewait_checkbox;
 	RAMSlider *ramsize_slider;
 	PathControl *extfs_control;
-	PathControl *rom_control;
 
 	BFilePanel *add_volume_panel;
 	BFilePanel *create_volume_panel;
+
+	BFilePanel *fSelectROMPanel;
+	BTextControl *fROMField;
+	BTextControl *fROMInfoChecksum;
+	BTextControl *fROMInfoVersion;
+	BTextControl *fROMInfoSubVersion;
+	BTextControl *fROMInfoNanokernel;
 
 	system_info	fSysInfo;
 
@@ -376,7 +390,6 @@ PrefsWindow::~PrefsWindow()
 /*
  *  Create "Volumes" pane
  */
-
 BView *PrefsWindow::CreatePaneVolumes(void)
 {
 	BView *pane = new BView(BRect(0, 0, top_frame.right-20, top_frame.bottom-80), GetString(STR_VOLUMES_PANE_TITLE), B_FOLLOW_NONE, B_WILL_DRAW);
@@ -652,16 +665,66 @@ BView *PrefsWindow::CreatePaneMemory(void)
 
 BView *PrefsWindow::CreatePaneRom(void)
 {
-	char str[256], str2[256];
 	BView *pane = new BView(BRect(0, 0, top_frame.right-20, top_frame.bottom-80), GetString(STR_ROM_PANE_TITLE), B_FOLLOW_NONE, B_WILL_DRAW);
 	pane->SetViewColor(fill_color);
-	float right = pane->Bounds().right-10;
 
-	rom_control = new PathControl(false, BRect(10, 100, right, 115), "rom", GetString(STR_ROM_FILE_CTRL), PrefsFindString("rom"), NULL);
-	rom_control->SetDivider(117);
-	pane->AddChild(rom_control);
+	fROMField = new BTextControl(GetString(STR_ROM_FILE_CTRL), PrefsFindString("rom"), NULL);
+	fROMField->SetEnabled(false);
+	fROMInfoChecksum = new BTextControl("ROM Checksum:", "", NULL);
+	fROMInfoChecksum->SetEnabled(false);
+	fROMInfoVersion = new BTextControl("ROM Version:", "", NULL);
+	fROMInfoVersion->SetEnabled(false);
+	fROMInfoSubVersion = new BTextControl("ROM SubVersion:", "", NULL);
+	fROMInfoSubVersion->SetEnabled(false);
+	fROMInfoNanokernel = new BTextControl("ROM Nanokernel:", "", NULL);
+	fROMInfoNanokernel->SetEnabled(false);
+
+	RefreshROMInfo();
+
+	fSelectROMPanel = new BFilePanel(B_OPEN_PANEL, &this_messenger, NULL,
+		B_FILE_NODE | B_DIRECTORY_NODE, false, new BMessage(MSG_SELECT_ROM_PANEL));
+
+	BButton *button = new BButton("browse", GetString(STR_BROWSE_BUTTON), new BMessage(MSG_SELECT_ROM));
+
+	BLayoutBuilder::Group<>(pane, B_VERTICAL)
+		.SetInsets(B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING,
+			B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING)
+		.AddGrid()
+			.AddTextControl(fROMField, 0, 0)
+			.AddTextControl(fROMInfoChecksum, 0, 1)
+			.AddTextControl(fROMInfoNanokernel, 0, 2)
+			.AddTextControl(fROMInfoVersion, 0, 3)
+			.AddTextControl(fROMInfoSubVersion, 0, 4)
+		.End()
+	    .Add(button)
+		.AddGlue();
+
 	return pane;
 
+}
+
+
+void
+PrefsWindow::RefreshROMInfo()
+{
+	romInfo info;
+	const char* file = fROMField->Text();
+
+	if (!DecodeROMInfo(file, &info)) {
+		// Invalid rom!
+		fROMInfoNanokernel->SetText("invalid");
+	} else {
+		char checksum[32];
+		snprintf(checksum, 32, "%08lX", info.checksum);
+		fROMInfoChecksum->SetText(checksum);
+		fROMInfoNanokernel->SetText(info.nanokernelID);
+
+		char version[32];
+		snprintf(version, 32, "%04X", info.version);
+		fROMInfoVersion->SetText(version);
+		snprintf(version, 32, "%04X", info.subVersion);
+		fROMInfoSubVersion->SetText(version);
+	}
 }
 
 
@@ -675,7 +738,7 @@ void PrefsWindow::MessageReceived(BMessage *msg)
 		case MSG_OK:				// "Start" button clicked
 		{
 			PrefsReplaceString("extfs", extfs_control->Text());
-			const char *str = rom_control->Text();
+			const char *str = fROMField->Text();
 			if (strlen(str))
 				PrefsReplaceString("rom", str);
 			else
@@ -730,6 +793,27 @@ void PrefsWindow::MessageReceived(BMessage *msg)
 		case MSG_CREATE_VOLUME:
 			create_volume_panel->Show();
 			break;
+
+		case MSG_SELECT_ROM:
+			fSelectROMPanel->Show();
+			break;
+
+		case MSG_SELECT_ROM_PANEL: {
+			entry_ref ref;
+			if (msg->FindRef("refs", &ref) == B_NO_ERROR) {
+				BEntry entry(&ref, true);
+				BPath path;
+				entry.GetPath(&path);
+				if (entry.IsFile()) {
+					PrefsAddString("rom", path.Path());
+					fROMField->SetText(path.Path());
+					RefreshROMInfo();
+				} else {
+					// TODO: Error
+				}
+			}
+			break;
+		}
 
 		case MSG_ADD_VOLUME_PANEL: {
 			entry_ref ref;
