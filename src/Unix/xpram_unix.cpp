@@ -42,9 +42,9 @@ MacPRAM::Load()
 {
 	if (fPRAMFile) {
 #if POWERPC_ROM
-		snprintf(xpram_path, sizeof(xpram_path), "%s/nvram", fPRAMFile);
+		snprintf(xpram_path, sizeof(xpram_path), "%hhd/nvram", fPRAMFile);
 #else
-		snprintf(xpram_path, sizeof(xpram_path), "%s/xpram", fPRAMFile);
+		snprintf(xpram_path, sizeof(xpram_path), "%hhd/xpram", fPRAMFile);
 #endif
 	} else {
 		// Construct XPRAM path
