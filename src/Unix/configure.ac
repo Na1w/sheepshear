@@ -1357,6 +1357,17 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#if ! (__GNUC__ >= 3)
                   [AC_MSG_RESULT(yes); HAVE_GCC30=yes],
                   [AC_MSG_RESULT(no)])
 
+dnl Check for clang.
+HAVE_CLANG=no
+AC_MSG_CHECKING(for CLANG)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifndef __clang__
+                                     # error !clang
+                                     typedef syntax error;
+                                     #endif
+                                   ]])],
+                  [AC_MSG_RESULT(yes); HAVE_CLANG=yes],
+                  [AC_MSG_RESULT(no)])
+
 dnl Check for ICC.
 AC_MSG_CHECKING(for ICC)
 HAVE_ICC=no
@@ -1598,6 +1609,8 @@ dnl Print summary.
 echo
 echo SheepShaver configuration summary:
 echo
+echo C Compiler ....................... : $CC
+echo C++ Compiler ..................... : $CXX
 echo SDL support ...................... : $SDL_SUPPORT
 echo BINCUE support ................... : $have_bincue
 echo LIBVHD support ................... : $have_libvhd
