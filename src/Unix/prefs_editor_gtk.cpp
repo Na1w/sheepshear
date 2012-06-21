@@ -48,12 +48,12 @@ static int screen_width, screen_height; // Screen dimensions
 
 
 // Prototypes
+static void create_system_pane(GtkWidget *top);
+static void create_bios_pane(GtkWidget *top);
 static void create_volumes_pane(GtkWidget *top);
 static void create_graphics_pane(GtkWidget *top);
 static void create_input_pane(GtkWidget *top);
 static void create_serial_pane(GtkWidget *top);
-static void create_memory_pane(GtkWidget *top);
-static void create_jit_pane(GtkWidget *top);
 static void read_settings(void);
 
 
@@ -171,6 +171,7 @@ static GtkWidget *make_table(GtkWidget *top, int x, int y)
 	gtk_box_pack_start(GTK_BOX(top), table, FALSE, FALSE, 0);
 	return table;
 }
+
 
 static GtkWidget *table_make_option_menu(GtkWidget *table, int row, int label_id, const opt_desc *options, int active)
 {
@@ -453,12 +454,12 @@ bool PrefsEditor(void)
 	gtk_box_pack_start(GTK_BOX(box), notebook, TRUE, TRUE, 0);
 	gtk_widget_realize(notebook);
 
+	create_system_pane(notebook);
+	create_bios_pane(notebook);
 	create_volumes_pane(notebook);
 	create_graphics_pane(notebook);
 	create_input_pane(notebook);
 	create_serial_pane(notebook);
-	create_memory_pane(notebook);
-	create_jit_pane(notebook);
 	gtk_widget_show(notebook);
 
 	static const opt_desc buttons[] = {
@@ -627,73 +628,6 @@ static void create_volumes_pane(GtkWidget *top)
 	menu = make_option_menu(box, STR_BOOTDRIVER_CTRL, options, active);
 
 	make_checkbox(box, STR_NOCDROM_CTRL, "nocdrom", GTK_SIGNAL_FUNC(tb_nocdrom));
-}
-
-
-/*
- *  "JIT Compiler" pane
- */
-
-// Are we running a JIT capable CPU?
-static bool is_jit_capable(void)
-{
-#if USE_JIT
-	return true;
-#elif defined __APPLE__ && defined __MACH__
-	// XXX run-time detect so that we can use a PPC GUI prefs editor
-	static char cpu[10];
-	if (cpu[0] == 0) {
-		FILE *fp = popen("uname -p", "r");
-		if (fp == NULL)
-			return false;
-		fgets(cpu, sizeof(cpu) - 1, fp);
-		fclose(fp);
-	}
-	if (cpu[0] == 'i' && cpu[2] == '8' && cpu[3] == '6') // XXX assuming i?86
-		return true;
-#endif
-	return false;
-}
-
-// Set sensitivity of widgets
-static void set_jit_sensitive(void)
-{
-	const bool jit_enabled = PrefsFindBool("jit");
-}
-
-// "Use JIT Compiler" button toggled
-static void tb_jit(GtkWidget *widget)
-{
-	PrefsReplaceBool("jit", GTK_TOGGLE_BUTTON(widget)->active);
-	set_jit_sensitive();
-}
-
-// Read settings from widgets and set preferences
-static void read_jit_settings(void)
-{
-	bool jit_enabled = is_jit_capable() && PrefsFindBool("jit");
-}
-
-// "Use built-in 68k DR emulator" button toggled
-static void tb_jit_68k(GtkWidget *widget)
-{
-	PrefsReplaceBool("jit68k", GTK_TOGGLE_BUTTON(widget)->active);
-}
-
-// Create "JIT Compiler" pane
-static void create_jit_pane(GtkWidget *top)
-{
-	GtkWidget *box, *table, *label, *menu;
-	char str[32];
-	
-	box = make_pane(top, STR_JIT_PANE_TITLE);
-
-	if (is_jit_capable()) {
-		make_checkbox(box, STR_JIT_CTRL, "jit", GTK_SIGNAL_FUNC(tb_jit));
-		set_jit_sensitive();
-	}
-
-	make_checkbox(box, STR_JIT_68K_CTRL, "jit68k", GTK_SIGNAL_FUNC(tb_jit_68k));
 }
 
 
@@ -1247,11 +1181,10 @@ static void create_serial_pane(GtkWidget *top)
 
 
 /*
- *  "Memory/Misc" pane
+ *  "System" pane
  */
 
 static GtkWidget *w_ramsize;
-static GtkWidget *w_rom_file;
 
 // Don't use CPU when idle?
 static void tb_idlewait(GtkWidget *widget)
@@ -1259,31 +1192,80 @@ static void tb_idlewait(GtkWidget *widget)
 	PrefsReplaceBool("idlewait", GTK_TOGGLE_BUTTON(widget)->active);
 }
 
+
 // "Ignore SEGV" button toggled
 static void tb_ignoresegv(GtkWidget *widget)
 {
 	PrefsReplaceBool("ignoresegv", GTK_TOGGLE_BUTTON(widget)->active);
 }
 
+
 // Read settings from widgets and set preferences
-static void read_memory_settings(void)
+static void read_system_settings(void)
 {
 	const char *str = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(w_ramsize)->entry));
 	PrefsReplaceInt32("ramsize", atoi(str) << 20);
 
-	str = gtk_entry_get_text(GTK_ENTRY(w_rom_file));
-	if (str && strlen(str))
-		PrefsReplaceString("rom", str);
-	else
-		PrefsRemoveItem("rom");
 }
 
-// Create "Memory/Misc" pane
-static void create_memory_pane(GtkWidget *top)
+
+// Are we running a JIT capable CPU?
+static bool is_jit_capable(void)
+{
+#if USE_JIT
+	return true;
+#elif defined __APPLE__ && defined __MACH__
+	// XXX run-time detect so that we can use a PPC GUI prefs editor
+	static char cpu[10];
+	if (cpu[0] == 0) {
+		FILE *fp = popen("uname -p", "r");
+		if (fp == NULL)
+			return false;
+		fgets(cpu, sizeof(cpu) - 1, fp);
+		fclose(fp);
+	}
+	if (cpu[0] == 'i' && cpu[2] == '8' && cpu[3] == '6') // XXX assuming i?86
+		return true;
+#endif
+	return false;
+}
+
+
+// Set sensitivity of widgets
+static void set_jit_sensitive(void)
+{
+	const bool jit_enabled = PrefsFindBool("jit");
+}
+
+
+// "Use JIT Compiler" button toggled
+static void tb_jit(GtkWidget *widget)
+{
+	PrefsReplaceBool("jit", GTK_TOGGLE_BUTTON(widget)->active);
+	set_jit_sensitive();
+}
+
+
+// Read settings from widgets and set preferences
+static void read_jit_settings(void)
+{
+	bool jit_enabled = is_jit_capable() && PrefsFindBool("jit");
+}
+
+
+// "Use built-in 68k DR emulator" button toggled
+static void tb_jit_68k(GtkWidget *widget)
+{
+	PrefsReplaceBool("jit68k", GTK_TOGGLE_BUTTON(widget)->active);
+}
+
+
+// Create "System" pane
+static void create_system_pane(GtkWidget *top)
 {
 	GtkWidget *box, *hbox, *table, *label, *menu;
 
-	box = make_pane(top, STR_MEMORY_MISC_PANE_TITLE);
+	box = make_pane(top, STR_SYSTEM_PANE_TITLE);
 	table = make_table(box, 2, 5);
 
 	static const combo_desc options[] = {
@@ -1302,10 +1284,44 @@ static void create_memory_pane(GtkWidget *top)
 	sprintf(default_ramsize, "%d", PrefsFindInt32("ramsize") >> 20);
 	w_ramsize = table_make_combobox(table, 0, STR_RAMSIZE_CTRL, default_ramsize, options);
 
-	w_rom_file = table_make_file_entry(table, 1, STR_ROM_FILE_CTRL, "rom");
+	make_separator(box);
 
 	make_checkbox(box, STR_IGNORESEGV_CTRL, "ignoresegv", GTK_SIGNAL_FUNC(tb_ignoresegv));
 	make_checkbox(box, STR_IDLEWAIT_CTRL, "idlewait", GTK_SIGNAL_FUNC(tb_idlewait));
+
+	if (is_jit_capable()) {
+		make_checkbox(box, STR_JIT_CTRL, "jit", GTK_SIGNAL_FUNC(tb_jit));
+		set_jit_sensitive();
+	}
+
+	make_checkbox(box, STR_JIT_68K_CTRL, "jit68k", GTK_SIGNAL_FUNC(tb_jit_68k));
+}
+
+
+/*
+ * "Bios" pane
+ */
+
+static GtkWidget *w_rom_file;
+
+static void read_bios_settings(void)
+{
+	const char *str = gtk_entry_get_text(GTK_ENTRY(w_rom_file));
+	if (str && strlen(str))
+		PrefsReplaceString("rom", str);
+	else
+		PrefsRemoveItem("rom");
+}
+
+
+static void create_bios_pane(GtkWidget *top)
+{
+	GtkWidget *box, *hbox, *table, *label, *menu;
+
+	box = make_pane(top, STR_ROM_PANE_TITLE);
+	table = make_table(box, 2, 5);
+
+	w_rom_file = table_make_file_entry(table, 1, STR_ROM_FILE_CTRL, "rom");
 }
 
 
@@ -1315,12 +1331,12 @@ static void create_memory_pane(GtkWidget *top)
 
 static void read_settings(void)
 {
+	read_system_settings();
+	read_bios_settings();
 	read_volumes_settings();
 	read_graphics_settings();
 	read_input_settings();
 	read_serial_settings();
-	read_memory_settings();
-	read_jit_settings();
 }
 
 

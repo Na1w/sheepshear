@@ -152,6 +152,7 @@ user_string_def common_strings[] = {
 	{STR_ETHERNET_IF_CTRL, "Ethernet Interface"},
 
 	{STR_MEMORY_MISC_PANE_TITLE, "Memory"},
+	{STR_SYSTEM_PANE_TITLE, "System"},
 	{STR_RAMSIZE_CTRL, "MacOS RAM Size (MB)"},
 	{STR_RAMSIZE_4MB_LAB, "4"},
 	{STR_RAMSIZE_8MB_LAB, "8"},
