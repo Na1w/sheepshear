@@ -1544,37 +1544,38 @@ if [[ "x$HAVE_IPA" = "xyes" ]]; then
 fi
 
 dnl Check for linker script support
+# Disable for now as it causes instability on some platforms
 case $target_os:$target_cpu in
-linux*:i?86)    LINKER_SCRIPT_FLAGS="-Wl,-T,ldscripts/linux-i386.ld";;
-linux*:x86_64)  LINKER_SCRIPT_FLAGS="-Wl,-T,ldscripts/linux-x86_64.ld";;
-linux*:powerpc) LINKER_SCRIPT_FLAGS="-Wl,-T,ldscripts/linux-ppc.ld";;
-netbsd*:i?86)   LINKER_SCRIPT_FLAGS="-Wl,-T,ldscripts/linux-i386.ld";;
-freebsd*:i?86)  LINKER_SCRIPT_FLAGS="-Wl,-T,ldscripts/freebsd-i386.ld";;
+#linux*:i?86)    LINKER_SCRIPT_FLAGS="-Wl,-T,ldscripts/linux-i386.ld";;
+#linux*:x86_64)  LINKER_SCRIPT_FLAGS="-Wl,-T,ldscripts/linux-x86_64.ld";;
+#linux*:powerpc) LINKER_SCRIPT_FLAGS="-Wl,-T,ldscripts/linux-ppc.ld";;
+#netbsd*:i?86)   LINKER_SCRIPT_FLAGS="-Wl,-T,ldscripts/linux-i386.ld";;
+#freebsd*:i?86)  LINKER_SCRIPT_FLAGS="-Wl,-T,ldscripts/freebsd-i386.ld";;
 darwin*:*)      LINKER_SCRIPT_FLAGS="-Wl,-seg1addr,0x78048000";;
 esac
-if [[ -n "$LINKER_SCRIPT_FLAGS" ]]; then
-  AC_CACHE_CHECK([whether linker script is usable],
-    ac_cv_linker_script_works, [
-    AC_LANG_SAVE
-    AC_LANG_CPLUSPLUS
-    saved_LDFLAGS="$LDFLAGS"
-    LDFLAGS="$LDFLAGS $LINKER_SCRIPT_FLAGS"
-    AC_TRY_RUN(
-      [int main() {if ((char *)&main < (char *)0x70000000) return 1;}],
-      [ac_cv_linker_script_works=yes],
-      [ac_cv_linker_script_works=no],
-      dnl When cross-compiling, assume it works
-      [ac_cv_linker_script_works="guessing yes"]
-    )
-    AC_LANG_RESTORE
-    if [[ "$ac_cv_linker_script_works" = "no" ]]; then
-      LDFLAGS="$saved_LDFLAGS"
-      LINKER_SCRIPT_FLAGS=""
-    fi
-  ])
-fi
-AC_TRANSLATE_DEFINE(HAVE_LINKER_SCRIPT, "$ac_cv_linker_script_works",
-  [Define if there is a linker script to relocate the executable above 0x70000000.])
+#if [[ -n "$LINKER_SCRIPT_FLAGS" ]]; then
+#  AC_CACHE_CHECK([whether linker script is usable],
+#    ac_cv_linker_script_works, [
+#    AC_LANG_SAVE
+#    AC_LANG_CPLUSPLUS
+#    saved_LDFLAGS="$LDFLAGS"
+#    LDFLAGS="$LDFLAGS $LINKER_SCRIPT_FLAGS"
+#    AC_TRY_RUN(
+#      [int main() {if ((char *)&main < (char *)0x70000000) return 1;}],
+#      [ac_cv_linker_script_works=yes],
+#      [ac_cv_linker_script_works=no],
+#      dnl When cross-compiling, assume it works
+#      [ac_cv_linker_script_works="guessing yes"]
+#    )
+#    AC_LANG_RESTORE
+#    if [[ "$ac_cv_linker_script_works" = "no" ]]; then
+#      LDFLAGS="$saved_LDFLAGS"
+#      LINKER_SCRIPT_FLAGS=""
+#    fi
+#  ])
+#fi
+#AC_TRANSLATE_DEFINE(HAVE_LINKER_SCRIPT, "$ac_cv_linker_script_works",
+#  [Define if there is a linker script to relocate the executable above 0x70000000.])
 
 dnl Generate Makefile.
 AC_SUBST(PERL)
