@@ -89,6 +89,10 @@ static inline int ppc_to_native_rounding_mode(int round)
 	case 1: return FE_TOWARDZERO;
 	case 2: return FE_UPWARD;
 	case 3: return FE_DOWNWARD;
+	default:
+		fprintf(stderr, "ppc_to_native_rounding_mode: bad value (%d)\n", round);
+		fprintf(stderr, "assuming to nearest\n");
+		return FE_TONEAREST;
 	}
 }
 
@@ -99,6 +103,10 @@ static inline int native_to_ppc_rounding_mode(int round)
 	case FE_TOWARDZERO:	return 1;
 	case FE_UPWARD:		return 2;
 	case FE_DOWNWARD:	return 3;
+	default:
+		fprintf(stderr, "native_to_ppc_rounding_mode: bad value (%d)\n", round);
+		fprintf(stderr, "assuming to nearest\n");
+		return 0;
 	}
 }
 
@@ -1630,7 +1638,6 @@ void powerpc_cpu::execute_vector_shift_octet(uint32 opcode)
 	typename VA::type const & vA = VA::const_ref(this, opcode);
 	typename VB::type const & vB = VB::const_ref(this, opcode);
 	typename VD::type & vD = VD::ref(this, opcode);
-	const int n_elements = 16 / VD::element_size;
 
 	const int sh = SH::get(this, opcode);
 	if (SD < 0) {

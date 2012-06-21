@@ -570,7 +570,7 @@ void powerpc_cpu::execute(uint32 entry)
 #endif
 	execute_depth++;
 #if PPC_DECODE_CACHE || PPC_ENABLE_JIT
-	if (execute_depth == 1 || (PPC_ENABLE_JIT && PPC_REENTRANT_JIT)) {
+	if (execute_depth == 1 || (PPC_ENABLE_JIT && (PPC_REENTRANT_JIT == 1))) {
 #if PPC_ENABLE_JIT
 		if (use_jit) {
 			block_info *bi = my_block_cache.find(pc());
@@ -612,7 +612,6 @@ void powerpc_cpu::execute(uint32 entry)
 			if (bi != NULL)
 				goto pdi_execute;
 
-			pdi_compile:
 #if PPC_PROFILE_COMPILE_TIME
 			compile_count++;
 			clock_t start_time;
@@ -622,7 +621,6 @@ void powerpc_cpu::execute(uint32 entry)
 			bi->init(pc());
 
 			// Predecode a new block
-			pdi_decode:
 			block_info::decode_info *di;
 			const instr_info_t *ii;
 			uint32 dpc;
