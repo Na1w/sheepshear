@@ -351,7 +351,7 @@ int main(int argc, char **argv)
 	CloseHandle(rom_fh);
 	
 	// Decode Mac ROM
-	if (!DecodeROM(rom_tmp, actual)) {
+	if (!DecodeROM(rom_tmp, actual, ROMBaseHost)) {
 		if (rom_size != 4*1024*1024) {
 			ErrorAlert(GetString(STR_ROM_SIZE_ERR));
 			goto quit;

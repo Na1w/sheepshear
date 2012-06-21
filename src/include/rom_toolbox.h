@@ -1,7 +1,8 @@
 /*
- *  rom_patches.h - ROM patches
+ *  rom_patches.cpp - ROM patches
  *
- *  SheepShaver (C) 1997-2008 Christian Bauer and Marc Hellwig
+ *  SheepShear, 2012 Alexander von Gluck
+ *  Portions from SheepShaver (C) 1997-2008 Christian Bauer and Marc Hellwig
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,24 +19,21 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ROM_PATCHES_H
-#define ROM_PATCHES_H
 
-// ROM types
-enum {
-	ROMTYPE_TNT,
-	ROMTYPE_ALCHEMY,
-	ROMTYPE_ZANZIBAR,
-	ROMTYPE_GAZELLE,
-	ROMTYPE_GOSSAMER,
-	ROMTYPE_NEWWORLD
+#include "sysdeps.h"
+
+
+struct romInfo {
+	uint32	checksum;
+	uint16	version;
+	uint16	subVersion;
+	char*	nanokernelID;
+	uint32	resourceMapLocation;
+	uint32	trapTableLocation;
 };
-extern int ROMType;
 
-extern bool PatchROM(void);
-extern void InstallDrivers(void);
 
-extern void AddSifter(uint32 type, int16 id);
-extern bool FindSifter(uint32 type, int16 id);
-
-#endif
+void DecodeLZSS(const uint8 *src, uint8 *dest, int size);
+void DecodeParcels(const uint8 *src, uint8 *dest, int size);
+bool DecodeROM(uint8 *data, uint32 size, uint8 *result);
+bool DecodeROMInfo(const char* fileName, romInfo *info);

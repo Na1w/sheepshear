@@ -106,6 +106,7 @@
 #include "video.h"
 #include "sys.h"
 #include "macos_util.h"
+#include "rom_toolbox.h"
 #include "rom_patches.h"
 #include "user_strings.h"
 #include "vm_alloc.h"
@@ -597,9 +598,9 @@ static bool load_mac_rom(void)
 	rom_tmp = new uint8[ROM_SIZE];
 	actual = read(rom_fd, (void *)rom_tmp, ROM_SIZE);
 	close(rom_fd);
-	
+
 	// Decode Mac ROM
-	if (!DecodeROM(rom_tmp, actual)) {
+	if (!DecodeROM(rom_tmp, actual, ROMBaseHost)) {
 		if (rom_size != 4*1024*1024) {
 			ErrorAlert(GetString(STR_ROM_SIZE_ERR));
 			return false;

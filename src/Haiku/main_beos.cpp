@@ -78,6 +78,7 @@
 #include "video.h"
 #include "sys.h"
 #include "macos_util.h"
+#include "rom_toolbox.h"
 #include "rom_patches.h"
 #include "user_strings.h"
 
@@ -690,9 +691,9 @@ void SheepShear::load_rom(void)
 
 	uint8 *rom = new uint8[ROM_SIZE];	// Reading directly into the area doesn't work
 	ssize_t actual = file.Read((void *)rom, ROM_SIZE);
-	
+
 	// Decode Mac ROM
-	if (!DecodeROM(rom, actual)) {
+	if (!DecodeROM(rom, actual, ROMBaseHost)) {
 		if (rom_size != 4*1024*1024)
 			throw rom_size_error();
 		else
