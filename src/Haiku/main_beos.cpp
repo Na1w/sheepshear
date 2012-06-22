@@ -277,13 +277,15 @@ void SheepShear::ReadyToRun(void)
 		PROGRAM_VERSION_MAJOR, PROGRAM_VERSION_MINOR);
 	printf("%s %s\n", GetString(STR_ABOUT_TEXT1), GetString(STR_ABOUT_TEXT2));
 
-#if !EMULATED_PPC
-	// Get TOC pointer
-	TOC = get_toc();
-#endif
-
 	// Get system info
 	get_system_info(&fSysInfo);
+
+#if !EMULATED_PPC
+	// On non-emulated we set emulator as close to host as we can
+
+	// Get TOC pointer
+	TOC = get_toc();
+
 	switch (fSysInfo.cpu_type) {
 		case B_CPU_PPC_601:
 			PVR = 0x00010000;
@@ -307,9 +309,17 @@ void SheepShear::ReadyToRun(void)
 			PVR = 0x00040000;
 			break;
 	}
+	// TODO: Watch for PowerPC 604 @ 2Ghz here :)
 	CPUClockSpeed = fSysInfo.cpu_clock_speed;
 	BusClockSpeed = fSysInfo.bus_clock_speed;
 	TimebaseSpeed = BusClockSpeed / 4;
+#else
+	// Otherwise we just emulate these values
+	PVR = 0x000c0000;           // Default: 7400 (with AltiVec)
+	CPUClockSpeed = 100000000;  // Default: 100MHz
+	BusClockSpeed = 100000000;  // Default: 100MHz
+	TimebaseSpeed =  25000000;  // Default:  25MHz
+#endif
 
 	// Delete old areas
 	area_id old_kernel_area = find_area(KERNEL_AREA_NAME);
