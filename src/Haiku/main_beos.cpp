@@ -121,6 +121,7 @@ const char SHEEP_AREA_NAME[] = "SheepShear Virtual Stack";
 const uintptr RAM_BASE = 0x10000000;		// Base address of RAM
 const uintptr ROM_BASE = 0x40800000;		// Base address of ROM
 
+const uint32 ROM_ALIGNMENT = 0x100000;		// ROM must be aligned to a 1MB boundary
 const uint32 SIG_STACK_SIZE = 8192;			// Size of signal stack
 
 const uint32 MSG_START = 'strt';			// Emulator start message
@@ -233,7 +234,7 @@ uint8 *ROMBaseHost;		// Base address of Mac ROM (host address space)
 static void *sig_stack = NULL;		// Stack for signal handlers
 static void *extra_stack = NULL;	// Stack for SIGSEGV inside interrupt handler
 uintptr SheepMem::zero_page = 0;	// Address of ro page filled in with zeros
-uintptr SheepMem::base;				// Address of SheepShear data
+uintptr SheepMem::base = 0x60000000;// Address of SheepShear data
 uintptr SheepMem::proc;				// Bottom address of SheepShave procedures
 uintptr SheepMem::data;				// Top of SheepShear data (stack like storage)
 static area_id SheepMemArea;		// SheepShear data area ID
@@ -392,6 +393,9 @@ void SheepShear::StartEmulator(void)
 	if (DriverConnect() != B_OK)
 		return;
 
+	// Size of a native page
+	page_size = B_PAGE_SIZE;
+
 	// Create areas for Kernel Data
 	kernel_data = (KernelData *)KERNEL_DATA_BASE;
 	kernel_area = create_area(KERNEL_AREA_NAME, (void **)&kernel_data, B_EXACT_ADDRESS, KERNEL_AREA_SIZE, B_NO_LOCK, B_READ_AREA | B_WRITE_AREA);
@@ -422,7 +426,7 @@ void SheepShear::StartEmulator(void)
 		PostMessage(B_QUIT_REQUESTED);
 		return;
 	}
-	
+
 	// Create area for Mac RAM
 	RAMSize = PrefsFindInt32("ramsize") & 0xfff00000;	// Round down to 1MB boundary
 	if (RAMSize < 8*1024*1024) {
@@ -430,6 +434,23 @@ void SheepShear::StartEmulator(void)
 		RAMSize = 8*1024*1024;
 	}
 
+#if REAL_ADDRESSING
+	bug("Using real addressing.\n");
+
+	// Create area for RAM / ROM
+	ram_area = create_area(RAM_AREA_NAME, (void **)&RAMBaseHost, B_ANY_ADDRESS,
+		RAMSize + ROM_AREA_SIZE + ROM_ALIGNMENT, B_NO_LOCK, B_READ_AREA | B_WRITE_AREA);
+
+	if (ram_area < 0)
+		throw area_error();
+
+	RAMBase = Host2MacAddr(RAMBaseHost);
+	ROMBase = (RAMBase + RAMSize + ROM_ALIGNMENT - 1) & -ROM_ALIGNMENT;
+	ROMBaseHost = Mac2HostAddr(ROMBase);
+#elif DIRECT_ADDRESSING
+	bug("Using direct addressing.\n");
+
+	// Create area for RAM
 	RAMBase = RAM_BASE;
 	ram_area = create_area(RAM_AREA_NAME, (void **)&RAMBase, B_BASE_ADDRESS, RAMSize, B_NO_LOCK, B_READ_AREA | B_WRITE_AREA);
 	if (ram_area < 0) {
@@ -438,13 +459,24 @@ void SheepShear::StartEmulator(void)
 		PostMessage(B_QUIT_REQUESTED);
 		return;
 	}
-	RAMBaseHost = Mac2HostAddr(RAMBase);
+	RAMBaseHost = (uint8 *)RAMBase;
 
-	D(bug("RAM area %ld at %p\n", ram_area, RAMBaseHost));
+	// Create area for ROM
+	ROMBase = ROM_BASE;
+	rom_area = create_area(ROM_AREA_NAME, (void **)&ROMBase, B_EXACT_ADDRESS, ROM_AREA_SIZE, B_NO_LOCK, B_READ_AREA | B_WRITE_AREA);
+	if (rom_area < 0)
+		throw area_error();
+	ROMBaseHost = (uint8 *)ROMBase;
+#else
+	#error No memory addressing model selected
+#endif
+
+	D(bug("RAM area %ld at %p (vaddr: 0x%lx)\n", ram_area, RAMBaseHost, RAMBase));
+	D(bug("ROM area %ld at %p (vaddr: 0x%lx)\n", rom_area, ROMBaseHost, ROMBase));
 
 	// Create area and load Mac ROM
 	try {
-		init_rom();
+		load_rom();
 	} catch (area_error) {
 		ErrorAlert(GetString(STR_NO_ROM_AREA_ERR));
 		PostMessage(B_QUIT_REQUESTED);
@@ -651,18 +683,6 @@ void SheepShear::Quit(void)
 
 void SheepShear::init_rom(void)
 {
-	// Size of a native page
-	page_size = B_PAGE_SIZE;
-
-	// Create area for ROM
-	ROMBase = ROM_BASE;
-	rom_area = create_area(ROM_AREA_NAME, (void **)&ROMBase, B_EXACT_ADDRESS, ROM_AREA_SIZE, B_NO_LOCK, B_READ_AREA | B_WRITE_AREA);
-	if (rom_area < 0)
-		throw area_error();
-	ROMBaseHost = Mac2HostAddr(ROMBase);
-
-	D(bug("ROM area %ld at %p\n", rom_area, ROMBase));
-
 	// Load ROM
 	load_rom();
 }
@@ -2029,7 +2049,7 @@ bool SheepMem::Init(void)
 		delete_area(old_sheep_area);
 
 	// Create area for SheepShear data
-	proc = base = 0x60000000;
+	proc = base;
 	SheepMemArea = create_area(SHEEP_AREA_NAME, (void **)&base, B_BASE_ADDRESS, size, B_NO_LOCK, B_READ_AREA | B_WRITE_AREA);
 	if (SheepMemArea < 0)
 		return false;
