@@ -90,6 +90,8 @@ const uint32 MSG_NONET = 'noet';
 const uint32 MSG_RAMSIZE = 'rmsz';			// "Memory" pane
 const uint32 MSG_IGNORESEGV = 'isgv';
 const uint32 MSG_IDLEWAIT = 'idlw';
+const uint32 MSG_JIT = 'jena';
+const uint32 MSG_JIT_68K = 'j68k';
 
 
 // RAM size slider class
@@ -219,11 +221,11 @@ public:
 	virtual void MessageReceived(BMessage *msg);
 
 private:
+	BView *CreatePaneSystem(void);
+	BView *CreatePaneRom(void);
 	BView *CreatePaneVolumes(void);
 	BView *CreatePaneGraphics(void);
 	BView *CreatePaneSerial(void);
-	BView *CreatePaneMemory(void);
-	BView *CreatePaneRom(void);
 
 	void RefreshROMInfo();
 
@@ -238,14 +240,16 @@ private:
 	int current_pane;
 
 	VolumeListView *volume_list;
-	BCheckBox *nocdrom_checkbox;
-	BCheckBox *gfxaccel_checkbox;
-	BCheckBox *nosound_checkbox;
-	BCheckBox *nonet_checkbox;
-	BCheckBox *ignoresegv_checkbox;
-	BCheckBox *idlewait_checkbox;
-	RAMSlider *ramsize_slider;
-	PathControl *extfs_control;
+	BCheckBox *fCheckboxNoCDROM;
+	BCheckBox *fCheckboxGfxAccel;
+	BCheckBox *fCheckboxDisableSound;
+	BCheckBox *fCheckboxNoNet;
+	BCheckBox *fCheckboxIgnoreSegv;
+	BCheckBox *fCheckboxIdleWait;
+	BCheckBox *fCheckboxJITEnable;
+	BCheckBox *fCheckboxJIT68kEnable;
+	RAMSlider *fSliderRamSize;
+	PathControl *fControlExtFS;
 
 	BFilePanel *add_volume_panel;
 	BFilePanel *create_volume_panel;
@@ -316,11 +320,11 @@ PrefsWindow::PrefsWindow(uint32 msg) : BWindow(BRect(0, 0, 475, 289), GetString(
 	top_frame = top->Bounds();
 
 	// Create panes
-	panes[0] = CreatePaneVolumes();
-	panes[1] = CreatePaneGraphics();
-	panes[2] = CreatePaneSerial();
-	panes[3] = CreatePaneMemory();
-	panes[4] = CreatePaneRom();
+	panes[0] = CreatePaneSystem();
+	panes[1] = CreatePaneRom();
+	panes[2] = CreatePaneVolumes();
+	panes[3] = CreatePaneGraphics();
+	panes[4] = CreatePaneSerial();
 
 	// Prefs item tab view
 	pane_tabs = new BTabView(BRect(10, 10, top_frame.right-10, top_frame.bottom-50), "items", B_WIDTH_FROM_LABEL);
@@ -409,9 +413,9 @@ BView *PrefsWindow::CreatePaneVolumes(void)
 	pane->AddChild(new BButton(BRect(pane->Bounds().right/3, 113, pane->Bounds().right*2/3, 133), "create_volume", GetString(STR_CREATE_VOLUME_BUTTON), new BMessage(MSG_CREATE_VOLUME)));
 	pane->AddChild(new BButton(BRect(pane->Bounds().right*2/3, 113, pane->Bounds().right-11, 133), "remove_volume", GetString(STR_REMOVE_VOLUME_BUTTON), new BMessage(MSG_REMOVE_VOLUME)));
 
-	extfs_control = new PathControl(true, BRect(10, 145, right, 160), "extfs", GetString(STR_EXTFS_CTRL), PrefsFindString("extfs"), NULL);
-	extfs_control->SetDivider(90);
-	pane->AddChild(extfs_control);
+	fControlExtFS = new PathControl(true, BRect(10, 145, right, 160), "extfs", GetString(STR_EXTFS_CTRL), PrefsFindString("extfs"), NULL);
+	fControlExtFS->SetDivider(90);
+	pane->AddChild(fControlExtFS);
 
 	BMenuField *menu_field;
 	BPopUpMenu *menu = new BPopUpMenu("");
@@ -430,9 +434,9 @@ BView *PrefsWindow::CreatePaneVolumes(void)
 			item->SetMarked(true);
 	}
 
-	nocdrom_checkbox = new BCheckBox(BRect(10, 185, right, 200), "nocdrom", GetString(STR_NOCDROM_CTRL), new BMessage(MSG_NOCDROM));
-	pane->AddChild(nocdrom_checkbox);
-	nocdrom_checkbox->SetValue(PrefsFindBool("nocdrom") ? B_CONTROL_ON : B_CONTROL_OFF);
+	fCheckboxNoCDROM = new BCheckBox(BRect(10, 185, right, 200), "nocdrom", GetString(STR_NOCDROM_CTRL), new BMessage(MSG_NOCDROM));
+	pane->AddChild(fCheckboxNoCDROM);
+	fCheckboxNoCDROM->SetValue(PrefsFindBool("nocdrom") ? B_CONTROL_ON : B_CONTROL_OFF);
 
 	return pane;
 }
@@ -517,9 +521,9 @@ BView *PrefsWindow::CreatePaneGraphics(void)
 			item->SetMarked(true);
 	}
 
-	gfxaccel_checkbox = new BCheckBox(BRect(10, 25, right, 40), "gfxaccel", GetString(STR_GFXACCEL_CTRL), new BMessage(MSG_GFXACCEL));
-	pane->AddChild(gfxaccel_checkbox);
-	gfxaccel_checkbox->SetValue(PrefsFindBool("gfxaccel") ? B_CONTROL_ON : B_CONTROL_OFF);
+	fCheckboxGfxAccel = new BCheckBox(BRect(10, 25, right, 40), "gfxaccel", GetString(STR_GFXACCEL_CTRL), new BMessage(MSG_GFXACCEL));
+	pane->AddChild(fCheckboxGfxAccel);
+	fCheckboxGfxAccel->SetValue(PrefsFindBool("gfxaccel") ? B_CONTROL_ON : B_CONTROL_OFF);
 
 	uint32 window_modes = PrefsFindInt32("windowmodes");
 	for (int i=0; i<NUM_WINDOW_MODES; i++) {
@@ -544,9 +548,9 @@ BView *PrefsWindow::CreatePaneGraphics(void)
 		p->box->SetValue(screen_modes & p->mode ? B_CONTROL_ON : B_CONTROL_OFF);
 	}
 
-	nosound_checkbox = new BCheckBox(BRect(10, 185, right, 200), "nosound", GetString(STR_NOSOUND_CTRL), new BMessage(MSG_NOSOUND));
-	pane->AddChild(nosound_checkbox);
-	nosound_checkbox->SetValue(PrefsFindBool("nosound") ? B_CONTROL_ON : B_CONTROL_OFF);
+	fCheckboxDisableSound = new BCheckBox(BRect(10, 185, right, 200), "nosound", GetString(STR_NOSOUND_CTRL), new BMessage(MSG_NOSOUND));
+	pane->AddChild(fCheckboxDisableSound);
+	fCheckboxDisableSound->SetValue(PrefsFindBool("nosound") ? B_CONTROL_ON : B_CONTROL_OFF);
 
 	return pane;
 }
@@ -613,22 +617,22 @@ BView *PrefsWindow::CreatePaneSerial(void)
 	pane->AddChild(menu_field);
 	set_serial_label(menu_b, "serialb");
 
-	nonet_checkbox = new BCheckBox(BRect(10, 47, right, 62), "nonet", GetString(STR_NONET_CTRL), new BMessage(MSG_NONET));
-	pane->AddChild(nonet_checkbox);
-	nonet_checkbox->SetValue(PrefsFindBool("nonet") ? B_CONTROL_ON : B_CONTROL_OFF);
+	fCheckboxNoNet = new BCheckBox(BRect(10, 47, right, 62), "nonet", GetString(STR_NONET_CTRL), new BMessage(MSG_NONET));
+	pane->AddChild(fCheckboxNoNet);
+	fCheckboxNoNet->SetValue(PrefsFindBool("nonet") ? B_CONTROL_ON : B_CONTROL_OFF);
 
 	return pane;
 }
 
 
 /*
- *  Create "Memory" pane
+ *  Create "System" pane
  */
 
-BView *PrefsWindow::CreatePaneMemory(void)
+BView *PrefsWindow::CreatePaneSystem(void)
 {
 	char str[256], str2[256];
-	BView *pane = new BView(BRect(0, 0, top_frame.right-20, top_frame.bottom-80), GetString(STR_MEMORY_MISC_PANE_TITLE), B_FOLLOW_NONE, B_WILL_DRAW);
+	BView *pane = new BView(BRect(0, 0, top_frame.right-20, top_frame.bottom-80), GetString(STR_SYSTEM_PANE_TITLE), B_FOLLOW_NONE, B_WILL_DRAW);
 	pane->SetViewColor(fill_color);
 	float right = pane->Bounds().right-10;
 
@@ -643,22 +647,32 @@ BView *PrefsWindow::CreatePaneMemory(void)
 
 	int32 ramSize = PrefsFindInt32("ramsize") / (1024 * 1024);
 
-	ramsize_slider = new RAMSlider(BRect(10, 5, right, 55), "ramsize",
+	fSliderRamSize = new RAMSlider(BRect(10, 5, right, 55), "ramsize",
 		GetString(STR_RAMSIZE_SLIDER), new BMessage(MSG_RAMSIZE), 8, maxRamsize, B_TRIANGLE_THUMB);
-	ramsize_slider->SetValue(ramSize);
-	ramsize_slider->UseFillColor(true, &slider_fill_color);
+	fSliderRamSize->SetValue(ramSize);
+	fSliderRamSize->UseFillColor(true, &slider_fill_color);
 	sprintf(str, GetString(STR_RAMSIZE_FMT), 8);
 	sprintf(str2, GetString(STR_RAMSIZE_FMT), maxRamsize);
-	ramsize_slider->SetLimitLabels(str, str2);
-	pane->AddChild(ramsize_slider);
+	fSliderRamSize->SetLimitLabels(str, str2);
+	pane->AddChild(fSliderRamSize);
 
-	ignoresegv_checkbox = new BCheckBox(BRect(10, 60, right, 75), "ignoresegv", GetString(STR_IGNORESEGV_CTRL), new BMessage(MSG_IGNORESEGV));
-	pane->AddChild(ignoresegv_checkbox);
-	ignoresegv_checkbox->SetValue(PrefsFindBool("ignoresegv") ? B_CONTROL_ON : B_CONTROL_OFF);
+	fCheckboxIgnoreSegv = new BCheckBox(BRect(10, 60, right, 75), "ignoresegv", GetString(STR_IGNORESEGV_CTRL), new BMessage(MSG_IGNORESEGV));
+	pane->AddChild(fCheckboxIgnoreSegv);
+	fCheckboxIgnoreSegv->SetValue(PrefsFindBool("ignoresegv") ? B_CONTROL_ON : B_CONTROL_OFF);
 
-	idlewait_checkbox = new BCheckBox(BRect(10, 80, right, 95), "idlewait", GetString(STR_IDLEWAIT_CTRL), new BMessage(MSG_IDLEWAIT));
-	pane->AddChild(idlewait_checkbox);
-	idlewait_checkbox->SetValue(PrefsFindBool("idlewait") ? B_CONTROL_ON : B_CONTROL_OFF);
+	fCheckboxIdleWait = new BCheckBox(BRect(10, 80, right, 95), "idlewait", GetString(STR_IDLEWAIT_CTRL), new BMessage(MSG_IDLEWAIT));
+	pane->AddChild(fCheckboxIdleWait);
+	fCheckboxIdleWait->SetValue(PrefsFindBool("idlewait") ? B_CONTROL_ON : B_CONTROL_OFF);
+
+	#if USE_JIT
+	fCheckboxJITEnable = new BCheckBox(BRect(10, 100, right, 95), "jit", GetString(STR_JIT_CTRL), new BMessage(MSG_JIT));
+	pane->AddChild(fCheckboxJITEnable);
+	fCheckboxJITEnable->SetValue(PrefsFindBool("jit") ? B_CONTROL_ON : B_CONTROL_OFF);
+
+	fCheckboxJIT68kEnable = new BCheckBox(BRect(10, 120, right, 95), "jit68k", GetString(STR_JIT_68K_CTRL), new BMessage(MSG_JIT_68K));
+	pane->AddChild(fCheckboxJIT68kEnable);
+	fCheckboxJIT68kEnable->SetValue(PrefsFindBool("jit68k") ? B_CONTROL_ON : B_CONTROL_OFF);
+	#endif
 
 	return pane;
 }
@@ -737,7 +751,7 @@ void PrefsWindow::MessageReceived(BMessage *msg)
 	switch (msg->what) {
 		case MSG_OK:				// "Start" button clicked
 		{
-			PrefsReplaceString("extfs", extfs_control->Text());
+			PrefsReplaceString("extfs", fControlExtFS->Text());
 			const char *str = fROMField->Text();
 			if (strlen(str))
 				PrefsReplaceString("rom", str);
@@ -890,15 +904,15 @@ void PrefsWindow::MessageReceived(BMessage *msg)
 			break;
 
 		case MSG_NOCDROM:
-			PrefsReplaceBool("nocdrom", nocdrom_checkbox->Value() == B_CONTROL_ON);
+			PrefsReplaceBool("nocdrom", fCheckboxNoCDROM->Value() == B_CONTROL_ON);
 			break;
 
 		case MSG_GFXACCEL:
-			PrefsReplaceBool("gfxaccel", gfxaccel_checkbox->Value() == B_CONTROL_ON);
+			PrefsReplaceBool("gfxaccel", fCheckboxGfxAccel->Value() == B_CONTROL_ON);
 			break;
 
 		case MSG_NOSOUND:
-			PrefsReplaceBool("nosound", nosound_checkbox->Value() == B_CONTROL_ON);
+			PrefsReplaceBool("nosound", fCheckboxDisableSound->Value() == B_CONTROL_ON);
 			break;
 
 		case MSG_WINDOW_MODE: {
@@ -978,19 +992,31 @@ void PrefsWindow::MessageReceived(BMessage *msg)
 		}
 
 		case MSG_NONET:
-			PrefsReplaceBool("nonet", nonet_checkbox->Value() == B_CONTROL_ON);
+			PrefsReplaceBool("nonet", fCheckboxNoNet->Value() == B_CONTROL_ON);
 			break;
 
 		case MSG_IGNORESEGV:
-			PrefsReplaceBool("ignoresegv", ignoresegv_checkbox->Value() == B_CONTROL_ON);
+			PrefsReplaceBool("ignoresegv", fCheckboxIgnoreSegv->Value() == B_CONTROL_ON);
 			break;
 
 		case MSG_IDLEWAIT:
-			PrefsReplaceBool("idlewait", idlewait_checkbox->Value() == B_CONTROL_ON);
+			PrefsReplaceBool("idlewait", fCheckboxIdleWait->Value() == B_CONTROL_ON);
+			break;
+
+		case MSG_JIT:
+			PrefsReplaceBool("jit", fCheckboxJITEnable->Value() == B_CONTROL_ON);
+			PrefsReplaceBool("jit68k", fCheckboxJITEnable->Value() == B_CONTROL_ON);
+			fCheckboxJIT68kEnable->SetEnabled(fCheckboxJITEnable->Value() == B_CONTROL_ON);
+			if (fCheckboxJITEnable->Value() != B_CONTROL_ON)
+				fCheckboxJIT68kEnable->SetValue(B_CONTROL_OFF);
+			break;
+
+		case MSG_JIT_68K:
+			PrefsReplaceBool("jit68k", fCheckboxJIT68kEnable->Value() == B_CONTROL_ON);
 			break;
 
 		case MSG_RAMSIZE:
-			PrefsReplaceInt32("ramsize", ramsize_slider->Value() * 1024 * 1024);
+			PrefsReplaceInt32("ramsize", fSliderRamSize->Value() * 1024 * 1024);
 			break;
 
 		default:
