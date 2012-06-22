@@ -118,6 +118,7 @@ const char DR_CACHE_AREA_NAME[] = "Macintosh DR Cache";
 const char DR_EMULATOR_AREA_NAME[] = "Macintosh DR Emulator";
 const char SHEEP_AREA_NAME[] = "SheepShear Virtual Stack";
 
+const uintptr RAM_BASE = 0x10000000;		// Base address of RAM
 const uintptr ROM_BASE = 0x40800000;		// Base address of ROM
 
 const uint32 SIG_STACK_SIZE = 8192;			// Size of signal stack
@@ -419,7 +420,7 @@ void SheepShear::StartEmulator(void)
 		RAMSize = 8*1024*1024;
 	}
 
-	RAMBase = 0x10000000;
+	RAMBase = RAM_BASE;
 	ram_area = create_area(RAM_AREA_NAME, (void **)&RAMBase, B_BASE_ADDRESS, RAMSize, B_NO_LOCK, B_READ_AREA | B_WRITE_AREA);
 	if (ram_area < 0) {
 		sprintf(str, GetString(STR_NO_RAM_AREA_ERR), strerror(ram_area), ram_area);
