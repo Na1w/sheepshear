@@ -438,7 +438,8 @@ void SheepShear::StartEmulator(void)
 		PostMessage(B_QUIT_REQUESTED);
 		return;
 	}
-	RAMBaseHost = (uint8 *)RAMBase;
+	RAMBaseHost = Mac2HostAddr(RAMBase);
+
 	D(bug("RAM area %ld at %p\n", ram_area, RAMBaseHost));
 
 	// Create area and load Mac ROM
@@ -658,7 +659,8 @@ void SheepShear::init_rom(void)
 	rom_area = create_area(ROM_AREA_NAME, (void **)&ROMBase, B_EXACT_ADDRESS, ROM_AREA_SIZE, B_NO_LOCK, B_READ_AREA | B_WRITE_AREA);
 	if (rom_area < 0)
 		throw area_error();
-	ROMBaseHost = (uint8 *)ROMBase;
+	ROMBaseHost = Mac2HostAddr(ROMBase);
+
 	D(bug("ROM area %ld at %p\n", rom_area, ROMBase));
 
 	// Load ROM
