@@ -43,7 +43,7 @@
 #include "macos_util.h"
 #include "rom_patches.h"
 #include "user_strings.h"
-#include "vm_alloc.h"
+//#include "vm_alloc.h"
 #include "thunks.h"
 
 #include <arpa/inet.h>
