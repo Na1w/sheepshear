@@ -186,7 +186,6 @@ private:
 	status_t DriverConnect();
 	void DriverDisconnect();
 
-	void init_rom(void);
 	void load_rom(void);
 
 	int sheep_fd;			// FD of sheep driver
@@ -670,21 +669,6 @@ void SheepShear::Quit(void)
 	PrefsExit();
 
 	BApplication::Quit();
-}
-
-
-/*
- *  Create area for ROM (sets rom_area) and load ROM file
- *
- *  area_error     : Cannot create area
- *  file_open_error: Cannot open ROM file
- *  file_read_error: Cannot read ROM file
- */
-
-void SheepShear::init_rom(void)
-{
-	// Load ROM
-	load_rom();
 }
 
 
