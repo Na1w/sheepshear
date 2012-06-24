@@ -1,7 +1,8 @@
 /*
  *  audio_dummy.cpp - Audio support, dummy implementation
  *
- *  Basilisk II (C) 1997-2008 Christian Bauer
+ *  SheepShear, 2012 Alexander von Gluck IV
+ *  Written from Basilisk II (C) 1997-2008 Christian Bauer
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,11 +35,11 @@ void
 PlatformAudio::DeviceInit(void)
 {
 	// Init audio status and feature flags
-	AudioStatus.sample_rate = 44100 << 16;
-	AudioStatus.sample_size = 16;
-	AudioStatus.channels = 2;
-	AudioStatus.mixer = 0;
-	AudioStatus.num_sources = 0;
+	fAudioStatus.sample_rate = 44100 << 16;
+	fAudioStatus.sample_size = 16;
+	fAudioStatus.channels = 2;
+	fAudioStatus.mixer = 0;
+	fAudioStatus.num_sources = 0;
 	audio_component_flags = cmpWantsRegisterMessage | kStereoOut | k16BitOut;
 
 	// Only one sample format is supported
@@ -60,6 +61,24 @@ PlatformAudio::DeviceInit(void)
  */
 void
 PlatformAudio::DeviceShutdown(void)
+{
+}
+
+
+/*
+ *  Open audio device
+ */
+void
+PlatformAudio::DeviceOpen()
+{
+}
+
+
+/*
+ *  Close audio device
+ */
+void
+PlatformAudio::DeviceClose()
 {
 }
 
