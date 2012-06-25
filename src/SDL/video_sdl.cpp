@@ -1350,13 +1350,9 @@ PlatformVideo::DeviceQuitFullScreen(void)
 /*
  *  Mac VBL interrupt
  */
-
-/*
- *  Execute video VBL routine
- */
 #ifdef SHEEPSHAVER
 void
-PlatformVideo::DeviceVBL(void)
+PlatformVideo::DeviceInterrupt(void)
 {
 	// Emergency quit requested? Then quit
 	if (emerg_quit)
@@ -1372,7 +1368,8 @@ PlatformVideo::DeviceVBL(void)
 		VSLDoInterruptService(private_data->vslServiceID);
 }
 #else
-void VideoInterrupt(void)
+void
+PlatformVideo::DeviceInterrupt(void)
 {
 	// We must fill in the events queue in the same thread that did call SDL_SetVideoMode()
 	SDL_PumpEvents();
@@ -1460,7 +1457,8 @@ void SDL_monitor_desc::set_palette(uint8 *pal, int num_in)
  */
 
 #ifdef SHEEPSHAVER
-int16 video_mode_change(VidLocals *csSave, uint32 ParamPtr)
+int16
+PlatformVideo::ModeChange(VidLocals *csSave, uint32 ParamPtr)
 {
 	/* return if no mode change */
 	if ((csSave->saveData == ReadMacInt32(ParamPtr + csData)) &&

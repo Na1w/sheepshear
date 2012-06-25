@@ -1727,6 +1727,48 @@ PlatformVideo::DeviceShutdown(void)
 
 
 /*
+ *  Install Native QuickDraw acceleration hooks
+ */
+void
+PlatformVideo::DeviceInstallAccel(void)
+{
+	// Install acceleration hooks
+	if (PrefsFindBool("gfxaccel")) {
+		D(bug("Video: Installing acceleration hooks\n"));
+		uint32 base;
+
+		SheepVar bitblt_hook_info(sizeof(accl_hook_info));
+		base = bitblt_hook_info.addr();
+		WriteMacInt32(base + 0, NativeTVECT(NATIVE_NQD_BITBLT_HOOK));
+		WriteMacInt32(base + 4, NativeTVECT(NATIVE_NQD_SYNC_HOOK));
+		WriteMacInt32(base + 8, ACCL_BITBLT);
+		NQDMisc(6, bitblt_hook_info.addr());
+
+		SheepVar fillrect_hook_info(sizeof(accl_hook_info));
+		base = fillrect_hook_info.addr();
+		WriteMacInt32(base + 0, NativeTVECT(NATIVE_NQD_FILLRECT_HOOK));
+		WriteMacInt32(base + 4, NativeTVECT(NATIVE_NQD_SYNC_HOOK));
+		WriteMacInt32(base + 8, ACCL_FILLRECT);
+		NQDMisc(6, fillrect_hook_info.addr());
+
+		for (int op = 0; op < 8; op++) {
+			switch (op) {
+				case ACCL_BITBLT:
+				case ACCL_FILLRECT:
+					continue;
+			}
+			SheepVar unknown_hook_info(sizeof(accl_hook_info));
+			base = unknown_hook_info.addr();
+			WriteMacInt32(base + 0, NativeTVECT(NATIVE_NQD_UNKNOWN_HOOK));
+			WriteMacInt32(base + 4, NativeTVECT(NATIVE_NQD_SYNC_HOOK));
+			WriteMacInt32(base + 8, op);
+			NQDMisc(6, unknown_hook_info.addr());
+		}
+	}
+}
+
+
+/*
  *  Suspend/resume emulator
  */
 
@@ -2135,9 +2177,8 @@ static void handle_events(void)
 /*
  *  Execute video VBL routine
  */
-
 void
-PlatformVideo::DeviceVBL(void)
+PlatformVideo::DeviceInterrupt(void)
 {
 	if (emerg_quit)
 		QuitEmulator();
@@ -2156,12 +2197,13 @@ PlatformVideo::DeviceVBL(void)
 /*
  *  Change video mode
  */
-
-int16 video_mode_change(VidLocals *csSave, uint32 ParamPtr)
+int16
+PlatformVideo::ModeChange(VidLocals *csSave, uint32 ParamPtr)
 {
 	/* return if no mode change */
-	if ((csSave->saveData == ReadMacInt32(ParamPtr + csData)) &&
-	    (csSave->saveMode == ReadMacInt16(ParamPtr + csMode))) return noErr;
+	if ((csSave->saveData == ReadMacInt32(ParamPtr + csData))
+	    && (csSave->saveMode == ReadMacInt16(ParamPtr + csMode)))
+		return noErr;
 
 	/* first find video mode in table */
 	for (int i=0; VModes[i].viType != DISPLAY_INVALID; i++) {

@@ -21,7 +21,7 @@
 #define _PLATFORM_VIDEO_H
 
 
-#include "video.h"
+#include "video_defs.h"
 
 #include <MediaKit.h>
 
@@ -34,9 +34,14 @@ public:
 		void				DeviceShutdown();
 		bool				DeviceOpen();
 		bool				DeviceClose();
+		void				DeviceInterrupt();
+
+		void				InstallAccel();
 
 		void				DeviceQuitFullScreen();
-		void				DeviceVBL();
+
+protected:
+		int16				ModeChange(VidLocals *csSave, uint32 ParamPtr);
 };
 
 

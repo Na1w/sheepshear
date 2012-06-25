@@ -106,28 +106,6 @@ extern rgb_color mac_pal[256];
 extern uint8 remap_mac_be[256];
 extern uint8 MacCursor[68];
 
-struct VidLocals{
-	uint16	saveMode;
-	uint32	saveData;
-	uint16	savePage;
-	uint32	saveBaseAddr;
-	uint32	gammaTable;			// Mac address of gamma tble
-	uint32	maxGammaTableSize;	// Biggest gamma table allocated
-	uint32	saveVidParms;
-	bool	luminanceMapping;	// Luminance mapping on/off
-	bool	cursorHardware;		// True if using hardware cursor
-	int32	cursorX;			// Hardware cursor state
-	int32	cursorY;
-	uint32	cursorVisible;
-	uint32	cursorSet;
-	bool	cursorHotFlag;
-	uint8	cursorHotX;
-	uint8	cursorHotY;
-	uint32	vslServiceID;		// VSL interrupt service ID
-	bool	interruptsEnabled;	// VBL interrupts on/off
-	uint32	regEntryID;			// Mac address of the service owner
-};
-
 extern VidLocals *private_data;	// Pointer to driver local variables (there is only one display, so this is ok)
 
 
@@ -136,20 +114,16 @@ public:
 							MacVideo();
 							~MacVideo();
 
-	void					VBL();
-	void					InstallAccel();
+	uint16					Control(uint32 pb, VidLocals *csSave);
+	void					Interrupt();
+
 	void					QuitFullScreen();
 };
 
 
-extern void VideoVBL(void);
-extern void VideoInstallAccel(void);
-extern void VideoQuitFullScreen(void);
-
 extern void video_set_palette(void);
 extern void video_set_cursor(void);
 extern bool video_can_change_cursor(void);
-extern int16 video_mode_change(VidLocals *csSave, uint32 ParamPtr);
 extern void video_set_dirty_area(int x, int y, int w, int h);
 
 extern int16 VSLDoInterruptService(uint32 arg1);

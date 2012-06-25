@@ -32,9 +32,9 @@ public:
 		void				DeviceShutdown();
 		bool				DeviceOpen();
 		bool				DeviceClose();
+		void				DeviceInterrupt();
 
 		void				DeviceQuitFullScreen();
-		void				DeviceVBL();
 };
 
 

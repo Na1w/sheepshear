@@ -18,6 +18,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include "sysdeps.h"
 
 #include "adb.h"
@@ -69,7 +70,8 @@ const uint32 MSG_QUIT_DISPLAY_MANAGER = 'quit';
 static thread_id dm_thread = -1;
 static sem_id dm_done_sem = -1;
 
-static status_t display_manager(void *arg)
+static status_t
+display_manager(void *arg)
 {
 	for (;;) {
 		// Receive message
@@ -212,7 +214,8 @@ static status_t display_manager(void *arg)
  *  Open display (window or screen)
  */
 
-static void open_display(void)
+static void
+open_display(void)
 {
 	D(bug("entering open_display()\n"));
 	display_type = VModes[cur_mode].viType;
@@ -231,7 +234,8 @@ static void open_display(void)
  *  Close display
  */
 
-static void close_display(void)
+static void
+close_display(void)
 {
 	D(bug("entering close_display()\n"));
 	if (display_type == DISPLAY_SCREEN)  {
@@ -248,8 +252,8 @@ static void close_display(void)
 /*
  *  Initialization
  */
-
-static void add_mode(VideoInfo *&p, uint32 allow, uint32 test, long apple_mode, long apple_id, int type)
+static void
+add_mode(VideoInfo *&p, uint32 allow, uint32 test, long apple_mode, long apple_id, int type)
 {
 	if (allow & test) {
 		p->viType = type;
@@ -409,7 +413,7 @@ PlatformVideo::DeviceQuitFullScreen(void)
  *  Execute video VBL routine
  */
 void
-PlatformVideo::DeviceVBL(void)
+PlatformVideo::DeviceInterrupt(void)
 {
 	release_sem(mac_os_lock);
 	if (private_data != NULL && private_data->interruptsEnabled)
@@ -532,9 +536,9 @@ static filter_result filter_func(BMessage *msg, BHandler **target, BMessageFilte
 /*
  *  Install graphics acceleration
  */
-
 // Rectangle blitting
-static void accl_bitblt(accl_params *p)
+static void
+accl_bitblt(accl_params *p)
 {
 	D(bug("accl_bitblt\n"));
 
@@ -571,8 +575,10 @@ static bool accl_bitblt_hook(accl_params *p)
 	return false;
 }
 
+
 // Rectangle filling/inversion
-static void accl_fillrect8(accl_params *p)
+static void
+accl_fillrect8(accl_params *p)
 {
 	D(bug("accl_fillrect8\n"));
 
@@ -589,7 +595,9 @@ static void accl_fillrect8(accl_params *p)
 	fillrect8_hook(dest_X, dest_Y, dest_X_max, dest_Y_max, color);
 }
 
-static void accl_fillrect32(accl_params *p)
+
+static void
+accl_fillrect32(accl_params *p)
 {
 	D(bug("accl_fillrect32\n"));
 
@@ -606,7 +614,9 @@ static void accl_fillrect32(accl_params *p)
 	fillrect32_hook(dest_X, dest_Y, dest_X_max, dest_Y_max, color);
 }
 
-static void accl_invrect(accl_params *p)
+
+static void
+accl_invrect(accl_params *p)
 {
 	D(bug("accl_invrect\n"));
 
@@ -624,7 +634,9 @@ static void accl_invrect(accl_params *p)
 	invrect_hook(dest_X, dest_Y, dest_X_max, dest_Y_max);
 }
 
-static bool accl_fillrect_hook(accl_params *p)
+
+static bool
+accl_fillrect_hook(accl_params *p)
 {
 	D(bug("accl_fillrect_hook %p\n", p));
 
@@ -675,7 +687,8 @@ static struct accl_hook_info foobar_hook_info = {(uint32)accl_foobar_hook, (uint
 */
 
 // Wait for graphics operation to finish
-static bool accl_sync_hook(void *arg)
+static bool
+accl_sync_hook(void *arg)
 {
 	D(bug("accl_sync_hook %p\n", arg));
 	if (sync_hook != NULL)
@@ -683,10 +696,12 @@ static bool accl_sync_hook(void *arg)
 	return true;
 }
 
+
 static struct accl_hook_info bitblt_hook_info = {(uint32)accl_bitblt_hook, (uint32)accl_sync_hook, ACCL_BITBLT};
 static struct accl_hook_info fillrect_hook_info = {(uint32)accl_fillrect_hook, (uint32)accl_sync_hook, ACCL_FILLRECT};
 
-void VideoInstallAccel(void)
+void
+PlatformVideo::InstallAccel(void)
 {
 	// Install acceleration hooks
 	if (PrefsFindBool("gfxaccel")) {
@@ -700,8 +715,8 @@ void VideoInstallAccel(void)
 /*
  *  Change video mode
  */
-
-int16 video_mode_change(VidLocals *csSave, uint32 ParamPtr)
+int16
+PlatformVideo::ModeChange(VidLocals *csSave, uint32 ParamPtr)
 {
 	/* return if no mode change */
 	if ((csSave->saveData == ReadMacInt32(ParamPtr + csData)) &&

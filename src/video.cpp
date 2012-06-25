@@ -121,6 +121,13 @@ MacVideo::~MacVideo()
 }
 
 
+void
+MacVideo::Interrupt()
+{
+	DeviceInterrupt();
+}
+
+
 /*
  *  Tell whether window/screen is activated or not (for mouse/keyboard polling)
  */
@@ -273,10 +280,12 @@ static int16 set_gamma(VidLocals *csSave, uint32 gamma)
 	return noErr;
 }
 
-static int16 VideoControl(uint32 pb, VidLocals *csSave)
+
+uint16
+MacVideo::Control(uint32 pb, VidLocals *csSave)
 {
 	int16 code = ReadMacInt16(pb + csCode);
-	D(bug("VideoControl %d: ", code));
+	D(bug("%s %d: ", __func__, code));
 	uint32 param = ReadMacInt32(pb + csParam);
 	switch (code) {
 
@@ -293,7 +302,7 @@ static int16 VideoControl(uint32 pb, VidLocals *csSave)
 			D(bug("mode:%04x page:%04x \n", ReadMacInt16(param + csMode),
 				ReadMacInt16(param + csPage)));
 			WriteMacInt32(param + csData, csSave->saveData);
-			return video_mode_change(csSave, param);
+			return ModeChange(csSave, param);
 
 		case cscSetEntries: {							// SetEntries
 			D(bug("SetEntries\n"));					
@@ -431,7 +440,7 @@ static int16 VideoControl(uint32 pb, VidLocals *csSave)
 		case cscSwitchMode:
 			D(bug("cscSwitchMode (Display Manager support) \nMode:%02x ID:%04x Page:%d\n",
 			  ReadMacInt16(param + csMode), ReadMacInt32(param + csData), ReadMacInt16(param + csPage)));
-			return video_mode_change(csSave, param);
+			return ModeChange(csSave, param);
 
 		case cscSavePreferredConfiguration:
 			D(bug("SavePreferredConfiguration\n"));
@@ -1083,7 +1092,7 @@ int16 VideoDoDriverIO(uint32 spaceID, uint32 commandID, uint32 commandContents, 
 			break;
 
 		case kControlCommand:
-			err = VideoControl(commandContents, private_data);
+			err = gMacVideo->Control(commandContents, private_data);
 			break;
 
 		case kStatusCommand:
