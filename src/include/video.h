@@ -17,9 +17,13 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef VIDEO_H
 #define VIDEO_H
+
+
+#include "platform_video.h"
+#include "video_defs.h"
+
 
 extern bool VideoActivated(void);
 extern bool VideoSnapshot(int xsize, int ysize, uint8 *p);
@@ -133,8 +137,18 @@ struct VidLocals{
 
 extern VidLocals *private_data;	// Pointer to driver local variables (there is only one display, so this is ok)
 
-extern bool VideoInit(void);
-extern void VideoExit(void);
+
+class MacVideo : public PlatformVideo {
+public:
+							MacVideo();
+							~MacVideo();
+
+	void					VBL();
+	void					InstallAccel();
+	void					QuitFullScreen();
+};
+
+
 extern void VideoVBL(void);
 extern void VideoInstallAccel(void);
 extern void VideoQuitFullScreen(void);

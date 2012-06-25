@@ -23,6 +23,7 @@
 
 #include "adb.h"
 #include "audio.h"
+#include "video.h"
 #include "xpram.h"
 
 
@@ -30,6 +31,7 @@
 extern ADBInput *gADBInput;		// ADB input driver
 extern MacAudio *gMacAudio;		// Mac audio driver
 extern MacPRAM *gMacPRAM;		// Mac pram driver
+extern MacVideo *gMacVideo;		// Mac video driver
 extern void *TOC;				// TOC pointer
 extern void *R13;				// r13 register
 extern uint32 KernelDataAddr;	// Address of Kernel Data

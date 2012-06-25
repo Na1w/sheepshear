@@ -24,6 +24,7 @@
 #include "video.h"
 #include "video_defs.h"
 #include "main.h"
+#include "platform_video.h"
 #include "prefs.h"
 #include "user_strings.h"
 #include "about_window.h"
@@ -71,7 +72,6 @@ static sem_id dm_done_sem = -1;
 static status_t display_manager(void *arg)
 {
 	for (;;) {
-
 		// Receive message
 		thread_id sender;
 		uint32 code = receive_data(&sender, NULL, 0);
@@ -298,7 +298,9 @@ static void add_mode(VideoInfo *&p, uint32 allow, uint32 test, long apple_mode, 
 	}
 }
 
-bool VideoInit(void)
+
+bool
+PlatformVideo::DeviceInit(void)
 {
 	// Init variables, create semaphores
 	private_data = NULL;
@@ -362,8 +364,8 @@ bool VideoInit(void)
 /*
  *  Deinitialization
  */
-
-void VideoExit(void)
+void
+PlatformVideo::DeviceShutdown()
 {
 	if (dm_thread >= 0) {
 
@@ -391,8 +393,8 @@ void VideoExit(void)
 /*
  *  Close screen in full-screen mode
  */
-
-void VideoQuitFullScreen(void)
+void
+PlatformVideo::DeviceQuitFullScreen(void)
 {
 	D(bug("VideoQuitFullScreen()\n"));
 	if (display_type == DIS_SCREEN) {
@@ -406,8 +408,8 @@ void VideoQuitFullScreen(void)
 /*
  *  Execute video VBL routine
  */
-
-void VideoVBL(void)
+void
+PlatformVideo::DeviceVBL(void)
 {
 	release_sem(mac_os_lock);
 	if (private_data != NULL && private_data->interruptsEnabled)
@@ -419,7 +421,6 @@ void VideoVBL(void)
 /*
  *  Filter function for receiving mouse and keyboard events
  */
-
 #define MENU_IS_POWER 0
 
 // Be -> Mac raw keycode translation table

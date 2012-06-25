@@ -70,6 +70,7 @@ static void sheepshaver_write_byte(uintptr adr, uint32 b)
 ADBInput* gADBInput;
 MacAudio* gMacAudio;
 MacPRAM* gMacPRAM;
+MacVideo* gMacVideo;
 
 
 /*
@@ -160,8 +161,7 @@ bool InitAll(const char *vmdir)
 	ClipInit();
 
 	// Init video
-	if (!VideoInit())
-		return false;
+	gMacVideo = new MacVideo();
 
 	// Install ROM patches
 	if (!PatchROM()) {
@@ -305,7 +305,7 @@ void ExitAll(void)
 	delete gADBInput;
 
 	// Exit video
-	VideoExit();
+	delete gMacVideo;
 
 	// Exit external file system
 	ExtFSExit();

@@ -108,9 +108,23 @@ static int16 set_gamma(VidLocals *csSave, uint32 gamma);
 
 
 /*
+ * MacVideo
+ */
+MacVideo::MacVideo()
+{
+	DeviceInit();
+}
+
+
+MacVideo::~MacVideo()
+{
+	DeviceShutdown();
+}
+
+
+/*
  *  Tell whether window/screen is activated or not (for mouse/keyboard polling)
  */
- 
 bool VideoActivated(void)
 {
 	return video_activated;	

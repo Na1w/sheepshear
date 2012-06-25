@@ -1778,7 +1778,7 @@ static void sigsegv_handler(vregs *r)
 		segv_r[20], segv_r[21], segv_r[22], segv_r[23],
 		segv_r[24], segv_r[25], segv_r[26], segv_r[27],
 		segv_r[28], segv_r[29], segv_r[30], segv_r[31]);
-	VideoQuitFullScreen();
+	gMacVideo->DeviceQuitFullScreen();
 	disable_debugger(false);
 	debugger(str);
 	exit(1);
@@ -1996,7 +1996,7 @@ power_inst:		sprintf(str, GetString(STR_POWER_INSTRUCTION_ERR), r->pc, segv_r[1]
 		segv_r[20], segv_r[21], segv_r[22], segv_r[23],
 		segv_r[24], segv_r[25], segv_r[26], segv_r[27],
 		segv_r[28], segv_r[29], segv_r[30], segv_r[31]);
-	VideoQuitFullScreen();
+	gMacVideo->DeviceQuitFullScreen();
 	disable_debugger(false);
 	debugger(str);
 	exit(1);
@@ -2067,7 +2067,7 @@ void ErrorAlert(const char *text)
 	}
 	char str[256];
 	sprintf(str, GetString(STR_GUI_ERROR_PREFIX), text);
-	VideoQuitFullScreen();
+	gMacVideo->DeviceQuitFullScreen();
 	BAlert *alert = new BAlert(GetString(STR_ERROR_ALERT_TITLE), str, GetString(STR_QUIT_BUTTON), NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT);
 	alert->Go();
 }

@@ -1,6 +1,7 @@
 /*
  *  video_x.cpp - Video/graphics emulation, X11 specific stuff
  *
+ *  SheepShear, 2012 Alexander von Gluck IV
  *  SheepShaver (C) Marc Hellwig and Christian Bauer
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -26,6 +27,7 @@
  *      Ctrl-F1 = mount floppy
  *      Ctrl-F5 = grab mouse (in windowed mode)
  */
+
 
 #include "sysdeps.h"
 
@@ -1362,7 +1364,8 @@ static bool has_mode(int x, int y)
 	return DisplayWidth(x_display, screen) >= x && DisplayHeight(x_display, screen) >= y;
 }
 
-bool VideoInit(void)
+bool
+PlatformVideo::DeviceInit(void)
 {
 #ifdef ENABLE_VOSF
 	// Zero the mainBuffer structure
@@ -1680,7 +1683,8 @@ bool VideoInit(void)
  *  Deinitialization
  */
 
-void VideoExit(void)
+void
+PlatformVideo::VideoShutdown(void)
 {
 	// Stop redraw thread
 	if (redraw_thread_active) {
@@ -1826,9 +1830,10 @@ static void resume_emul(void)
  *  Close screen in full-screen mode
  */
 
-void VideoQuitFullScreen(void)
+void
+PlatformVideo::DeviceQuitFullScreen(void)
 {
-	D(bug("VideoQuitFullScreen()\n"));
+	D(bug("%s\n", __func__));
 	if (display_type == DIS_SCREEN) {
 		quit_full_screen = true;
 		while (!quit_full_screen_ack) ;
@@ -2131,7 +2136,8 @@ static void handle_events(void)
  *  Execute video VBL routine
  */
 
-void VideoVBL(void)
+void
+PlatformVideo::DeviceVBL(void)
 {
 	if (emerg_quit)
 		QuitEmulator();
