@@ -1730,7 +1730,7 @@ PlatformVideo::DeviceShutdown(void)
  *  Install Native QuickDraw acceleration hooks
  */
 void
-PlatformVideo::DeviceInstallAccel(void)
+PlatformVideo::InstallAccel(void)
 {
 	// Install acceleration hooks
 	if (PrefsFindBool("gfxaccel")) {

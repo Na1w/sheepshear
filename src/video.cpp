@@ -439,7 +439,7 @@ MacVideo::Control(uint32 pb, VidLocals *csSave)
 
 		case cscSwitchMode:
 			D(bug("cscSwitchMode (Display Manager support) \nMode:%02x ID:%04x Page:%d\n",
-			  ReadMacInt16(param + csMode), ReadMacInt32(param + csData), ReadMacInt16(param + csPage)));
+				ReadMacInt16(param + csMode), ReadMacInt32(param + csData), ReadMacInt16(param + csPage)));
 			return ModeChange(csSave, param);
 
 		case cscSavePreferredConfiguration:

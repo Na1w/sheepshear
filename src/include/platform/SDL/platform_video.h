@@ -21,7 +21,7 @@
 #define _PLATFORM_VIDEO_H
 
 
-#include "video.h"
+#include "video_defs.h"
 
 
 class PlatformVideo
@@ -34,7 +34,11 @@ public:
 		bool				DeviceClose();
 		void				DeviceInterrupt();
 
+		void				InstallAccel();
+
 		void				DeviceQuitFullScreen();
+protected:
+		int16				ModeChange(VidLocals *csSave, uint32 ParamPtr);
 };
 
 

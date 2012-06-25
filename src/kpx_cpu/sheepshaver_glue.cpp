@@ -308,11 +308,11 @@ int sheepshaver_cpu::compile1(codegen_context_t & cg_context)
 			status = COMPILE_CODE_OK;
 			break;
 		case NATIVE_VIDEO_INSTALL_ACCEL:
-			dg.gen_invoke(VideoInstallAccel);
+			dg.gen_invoke(gMacVideo->InstallAccel);
 			status = COMPILE_CODE_OK;
 			break;
 		case NATIVE_VIDEO_VBL:
-			dg.gen_invoke(gMacVideo->DeviceVBL);
+			dg.gen_invoke(gMacVideo->Interrupt);
 			status = COMPILE_CODE_OK;
 			break;
 		case NATIVE_GET_RESOURCE:
@@ -1014,10 +1014,10 @@ void sheepshaver_cpu::execute_native_op(uint32 selector)
 		DoPatchNameRegistry();
 		break;
 	case NATIVE_VIDEO_INSTALL_ACCEL:
-		VideoInstallAccel();
+		gMacVideo->InstallAccel();
 		break;
 	case NATIVE_VIDEO_VBL:
-		gMacVideo->DeviceVBL();
+		gMacVideo->Interrupt();
 		break;
 	case NATIVE_VIDEO_DO_DRIVER_IO:
 		gpr(3) = (int32)(int16)VideoDoDriverIO(gpr(3), gpr(4), gpr(5), gpr(6), gpr(7));

@@ -1387,9 +1387,50 @@ PlatformVideo::DeviceInterrupt(void)
 
 
 /*
+ *  Install Native QuickDraw acceleration hooks
+ */
+void
+PlatformVideo::InstallAccel(void)
+{
+	// Install acceleration hooks
+	if (PrefsFindBool("gfxaccel")) {
+		D(bug("Video: Installing acceleration hooks\n"));
+		uint32 base;
+
+		SheepVar bitblt_hook_info(sizeof(accl_hook_info));
+		base = bitblt_hook_info.addr();
+		WriteMacInt32(base + 0, NativeTVECT(NATIVE_NQD_BITBLT_HOOK));
+		WriteMacInt32(base + 4, NativeTVECT(NATIVE_NQD_SYNC_HOOK));
+		WriteMacInt32(base + 8, ACCL_BITBLT);
+		NQDMisc(6, bitblt_hook_info.addr());
+
+		SheepVar fillrect_hook_info(sizeof(accl_hook_info));
+		base = fillrect_hook_info.addr();
+		WriteMacInt32(base + 0, NativeTVECT(NATIVE_NQD_FILLRECT_HOOK));
+		WriteMacInt32(base + 4, NativeTVECT(NATIVE_NQD_SYNC_HOOK));
+		WriteMacInt32(base + 8, ACCL_FILLRECT);
+		NQDMisc(6, fillrect_hook_info.addr());
+
+		for (int op = 0; op < 8; op++) {
+			switch (op) {
+				case ACCL_BITBLT:
+				case ACCL_FILLRECT:
+					continue;
+			}
+			SheepVar unknown_hook_info(sizeof(accl_hook_info));
+			base = unknown_hook_info.addr();
+			WriteMacInt32(base + 0, NativeTVECT(NATIVE_NQD_UNKNOWN_HOOK));
+			WriteMacInt32(base + 4, NativeTVECT(NATIVE_NQD_SYNC_HOOK));
+			WriteMacInt32(base + 8, op);
+			NQDMisc(6, unknown_hook_info.addr());
+		}
+	}
+}
+
+
+/*
  *  Set palette
  */
-
 #ifdef SHEEPSHAVER
 void video_set_palette(void)
 {
