@@ -99,16 +99,9 @@ enum {	// viAppleID
 	APPLE_ID_MAX = APPLE_CUSTOM
 };
 
-enum {	// Display type
-	DIS_INVALID,
-	DIS_SCREEN,
-	DIS_WINDOW
-};
-
 extern bool video_activated;		// Flag: video display activated, mouse and keyboard data valid
 extern uint32 screen_base;			// Frame buffer base address
 extern int cur_mode;					// Number of current video mode (index in VModes array)
-extern int display_type;			// Current display type (see above)
 extern rgb_color mac_pal[256];
 extern uint8 remap_mac_be[256];
 extern uint8 MacCursor[68];

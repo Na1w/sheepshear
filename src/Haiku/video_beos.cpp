@@ -216,10 +216,10 @@ static void open_display(void)
 {
 	D(bug("entering open_display()\n"));
 	display_type = VModes[cur_mode].viType;
-	if (display_type == DIS_SCREEN) {
+	if (display_type == DISPLAY_SCREEN) {
 		while (send_data(dm_thread, MSG_OPEN_SCREEN, NULL, 0) == B_INTERRUPTED) ;
 		while (acquire_sem(dm_done_sem) == B_INTERRUPTED) ;
-	} else if (display_type == DIS_WINDOW) {
+	} else if (display_type == DISPLAY_WINDOW) {
 		while (send_data(dm_thread, MSG_OPEN_WINDOW, NULL, 0) == B_INTERRUPTED) ;
 		while (acquire_sem(dm_done_sem) == B_INTERRUPTED) ;
 	}
@@ -234,10 +234,10 @@ static void open_display(void)
 static void close_display(void)
 {
 	D(bug("entering close_display()\n"));
-	if (display_type == DIS_SCREEN)  {
+	if (display_type == DISPLAY_SCREEN)  {
 		while (send_data(dm_thread, MSG_CLOSE_SCREEN, NULL, 0) == B_INTERRUPTED) ;
 		while (acquire_sem(dm_done_sem) == B_INTERRUPTED) ;
-	} else if (display_type == DIS_WINDOW) {
+	} else if (display_type == DISPLAY_WINDOW) {
 		while (send_data(dm_thread, MSG_CLOSE_WINDOW, NULL, 0) == B_INTERRUPTED) ;
 		while (acquire_sem(dm_done_sem) == B_INTERRUPTED) ;
 	}
@@ -315,31 +315,31 @@ PlatformVideo::DeviceInit(void)
 	uint32 screen_modes = PrefsFindInt32("screenmodes");
 	if (window_modes == 0 && screen_modes == 0)
 		window_modes |= B_8_BIT_640x480 | B_8_BIT_800x600;	// Allow at least 640x480 and 800x600 window modes
-	add_mode(p, window_modes, B_8_BIT_640x480, APPLE_8_BIT, APPLE_W_640x480, DIS_WINDOW);
-	add_mode(p, window_modes, B_8_BIT_800x600, APPLE_8_BIT, APPLE_W_800x600, DIS_WINDOW);
-	add_mode(p, window_modes, B_15_BIT_640x480, APPLE_16_BIT, APPLE_W_640x480, DIS_WINDOW);
-	add_mode(p, window_modes, B_15_BIT_800x600, APPLE_16_BIT, APPLE_W_800x600, DIS_WINDOW);
-	add_mode(p, window_modes, B_32_BIT_640x480, APPLE_32_BIT, APPLE_W_640x480, DIS_WINDOW);
-	add_mode(p, window_modes, B_32_BIT_800x600, APPLE_32_BIT, APPLE_W_800x600, DIS_WINDOW);
-	add_mode(p, screen_modes, B_8_BIT_640x480, APPLE_8_BIT, APPLE_640x480, DIS_SCREEN);
-	add_mode(p, screen_modes, B_8_BIT_800x600, APPLE_8_BIT, APPLE_800x600, DIS_SCREEN);
-	add_mode(p, screen_modes, B_8_BIT_1024x768, APPLE_8_BIT, APPLE_1024x768, DIS_SCREEN);
-	add_mode(p, screen_modes, B_8_BIT_1152x900, APPLE_8_BIT, APPLE_1152x900, DIS_SCREEN);
-	add_mode(p, screen_modes, B_8_BIT_1280x1024, APPLE_8_BIT, APPLE_1280x1024, DIS_SCREEN);
-	add_mode(p, screen_modes, B_8_BIT_1600x1200, APPLE_8_BIT, APPLE_1600x1200, DIS_SCREEN);
-	add_mode(p, screen_modes, B_15_BIT_640x480, APPLE_16_BIT, APPLE_640x480, DIS_SCREEN);
-	add_mode(p, screen_modes, B_15_BIT_800x600, APPLE_16_BIT, APPLE_800x600, DIS_SCREEN);
-	add_mode(p, screen_modes, B_15_BIT_1024x768, APPLE_16_BIT, APPLE_1024x768, DIS_SCREEN);
-	add_mode(p, screen_modes, B_15_BIT_1152x900, APPLE_16_BIT, APPLE_1152x900, DIS_SCREEN);
-	add_mode(p, screen_modes, B_15_BIT_1280x1024, APPLE_16_BIT, APPLE_1280x1024, DIS_SCREEN);
-	add_mode(p, screen_modes, B_15_BIT_1600x1200, APPLE_16_BIT, APPLE_1600x1200, DIS_SCREEN);
-	add_mode(p, screen_modes, B_32_BIT_640x480, APPLE_32_BIT, APPLE_640x480, DIS_SCREEN);
-	add_mode(p, screen_modes, B_32_BIT_800x600, APPLE_32_BIT, APPLE_800x600, DIS_SCREEN);
-	add_mode(p, screen_modes, B_32_BIT_1024x768, APPLE_32_BIT, APPLE_1024x768, DIS_SCREEN);
-	add_mode(p, screen_modes, B_32_BIT_1152x900, APPLE_32_BIT, APPLE_1152x900, DIS_SCREEN);
-	add_mode(p, screen_modes, B_32_BIT_1280x1024, APPLE_32_BIT, APPLE_1280x1024, DIS_SCREEN);
-	add_mode(p, screen_modes, B_32_BIT_1600x1200, APPLE_32_BIT, APPLE_1600x1200, DIS_SCREEN);
-	p->viType = DIS_INVALID;	// End marker
+	add_mode(p, window_modes, B_8_BIT_640x480, APPLE_8_BIT, APPLE_W_640x480, DISPLAY_WINDOW);
+	add_mode(p, window_modes, B_8_BIT_800x600, APPLE_8_BIT, APPLE_W_800x600, DISPLAY_WINDOW);
+	add_mode(p, window_modes, B_15_BIT_640x480, APPLE_16_BIT, APPLE_W_640x480, DISPLAY_WINDOW);
+	add_mode(p, window_modes, B_15_BIT_800x600, APPLE_16_BIT, APPLE_W_800x600, DISPLAY_WINDOW);
+	add_mode(p, window_modes, B_32_BIT_640x480, APPLE_32_BIT, APPLE_W_640x480, DISPLAY_WINDOW);
+	add_mode(p, window_modes, B_32_BIT_800x600, APPLE_32_BIT, APPLE_W_800x600, DISPLAY_WINDOW);
+	add_mode(p, screen_modes, B_8_BIT_640x480, APPLE_8_BIT, APPLE_640x480, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_8_BIT_800x600, APPLE_8_BIT, APPLE_800x600, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_8_BIT_1024x768, APPLE_8_BIT, APPLE_1024x768, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_8_BIT_1152x900, APPLE_8_BIT, APPLE_1152x900, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_8_BIT_1280x1024, APPLE_8_BIT, APPLE_1280x1024, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_8_BIT_1600x1200, APPLE_8_BIT, APPLE_1600x1200, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_15_BIT_640x480, APPLE_16_BIT, APPLE_640x480, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_15_BIT_800x600, APPLE_16_BIT, APPLE_800x600, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_15_BIT_1024x768, APPLE_16_BIT, APPLE_1024x768, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_15_BIT_1152x900, APPLE_16_BIT, APPLE_1152x900, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_15_BIT_1280x1024, APPLE_16_BIT, APPLE_1280x1024, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_15_BIT_1600x1200, APPLE_16_BIT, APPLE_1600x1200, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_32_BIT_640x480, APPLE_32_BIT, APPLE_640x480, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_32_BIT_800x600, APPLE_32_BIT, APPLE_800x600, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_32_BIT_1024x768, APPLE_32_BIT, APPLE_1024x768, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_32_BIT_1152x900, APPLE_32_BIT, APPLE_1152x900, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_32_BIT_1280x1024, APPLE_32_BIT, APPLE_1280x1024, DISPLAY_SCREEN);
+	add_mode(p, screen_modes, B_32_BIT_1600x1200, APPLE_32_BIT, APPLE_1600x1200, DISPLAY_SCREEN);
+	p->viType = DISPLAY_INVALID;	// End marker
 	p->viRowBytes = 0;
 	p->viXsize = p->viYsize = 0;
 	p->viAppleMode = 0;
@@ -351,7 +351,7 @@ PlatformVideo::DeviceInit(void)
 
 	// Open window/screen
 	open_display();
-	if (display_type == DIS_SCREEN && the_screen == NULL) {
+	if (display_type == DISPLAY_SCREEN && the_screen == NULL) {
 		char str[256];
 		sprintf(str, GetString(STR_FULL_SCREEN_ERR), strerror(screen_error), screen_error);
 		ErrorAlert(str);
@@ -397,7 +397,7 @@ void
 PlatformVideo::DeviceQuitFullScreen(void)
 {
 	D(bug("VideoQuitFullScreen()\n"));
-	if (display_type == DIS_SCREEN) {
+	if (display_type == DISPLAY_SCREEN) {
 		acquire_sem(video_lock);
 		close_display();
 		release_sem(video_lock);
@@ -558,7 +558,7 @@ static bool accl_bitblt_hook(accl_params *p)
 
 	// Check if we can accelerate this bitblt
 	if (p->src_base_addr == screen_base && p->dest_base_addr == screen_base &&
-		display_type == DIS_SCREEN && bitblt_hook != NULL &&
+		display_type == DISPLAY_SCREEN && bitblt_hook != NULL &&
 		((uint32 *)p)[0x18 >> 2] + ((uint32 *)p)[0x128 >> 2] == 0 &&
 		((uint32 *)p)[0x130 >> 2] == 0 &&
 		p->transfer_mode == 0 &&
@@ -629,7 +629,7 @@ static bool accl_fillrect_hook(accl_params *p)
 	D(bug("accl_fillrect_hook %p\n", p));
 
 	// Check if we can accelerate this fillrect
-	if (p->dest_base_addr == screen_base && ((uint32 *)p)[0x284 >> 2] != 0 && display_type == DIS_SCREEN) {
+	if (p->dest_base_addr == screen_base && ((uint32 *)p)[0x284 >> 2] != 0 && display_type == DISPLAY_SCREEN) {
 		if (p->transfer_mode == 8) {
 			// Fill
 			if (p->dest_pixel_size == 8 && fillrect8_hook != NULL) {
@@ -708,7 +708,7 @@ int16 video_mode_change(VidLocals *csSave, uint32 ParamPtr)
 	    (csSave->saveMode == ReadMacInt16(ParamPtr + csMode))) return noErr;
 
 	/* first find video mode in table */
-	for (int i=0; VModes[i].viType != DIS_INVALID; i++) {
+	for (int i=0; VModes[i].viType != DISPLAY_INVALID; i++) {
 		if ((ReadMacInt16(ParamPtr + csMode) == VModes[i].viAppleMode) &&
 		    (ReadMacInt32(ParamPtr + csData) == VModes[i].viAppleID)) {
 			csSave->saveMode = ReadMacInt16(ParamPtr + csMode);
@@ -726,7 +726,7 @@ int16 video_mode_change(VidLocals *csSave, uint32 ParamPtr)
 			open_display();
 
 			/* opening the screen failed? Then bail out */
-			if (display_type == DIS_SCREEN && the_screen == NULL) {
+			if (display_type == DISPLAY_SCREEN && the_screen == NULL) {
 				release_sem(video_lock);
 				ErrorAlert(GetString(STR_FULL_SCREEN_ERR));
 				QuitEmulator();
@@ -752,7 +752,7 @@ int16 video_mode_change(VidLocals *csSave, uint32 ParamPtr)
 
 void video_set_palette(void)
 {
-	if (display_type == DIS_SCREEN && the_screen != NULL)
+	if (display_type == DISPLAY_SCREEN && the_screen != NULL)
 		the_screen->palette_changed = true;
 	else {									// remap colors to BeOS-Palette
 		BScreen screen;
@@ -768,7 +768,7 @@ void video_set_palette(void)
 
 bool video_can_change_cursor(void)
 {
-	return (display_type != DIS_SCREEN);
+	return (display_type != DISPLAY_SCREEN);
 }
 
 

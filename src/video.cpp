@@ -44,7 +44,6 @@
 bool video_activated = false;		// Flag: video display activated, mouse and keyboard data valid
 uint32 screen_base = 0;				// Frame buffer base address
 int cur_mode;						// Number of current video mode (index in VModes array)
-int display_type = DIS_INVALID;		// Current display type
 rgb_color mac_pal[256];
 uint8 remap_mac_be[256];
 uint8 MacCursor[68] = {16, 1};	// Mac cursor image
@@ -137,7 +136,7 @@ bool VideoActivated(void)
 
 bool VideoSnapshot(int xsize, int ysize, uint8 *p)
 {
-	if (display_type == DIS_WINDOW) {
+	if (display_type == DISPLAY_WINDOW) {
 		uint8 *screen = (uint8 *)private_data->saveBaseAddr;
 		uint32 row_bytes = VModes[cur_mode].viRowBytes;	
 		uint32 y2size = VModes[cur_mode].viYsize;
@@ -313,7 +312,7 @@ static int16 VideoControl(uint32 pb, VidLocals *csSave)
 			if (csSave->gammaTable) {
 #ifdef __HAIKU__
 				// Windows are gamma-corrected by BeOS
-				const bool can_do_gamma = (display_type == DIS_SCREEN);
+				const bool can_do_gamma = (display_type == DISPLAY_SCREEN);
 #else
 				const bool can_do_gamma = true;
 #endif
@@ -594,7 +593,7 @@ static int16 VideoControl(uint32 pb, VidLocals *csSave)
 static bool has_mode(uint32 id)
 {
 	VideoInfo *p = VModes;
-	while (p->viType != DIS_INVALID) {
+	while (p->viType != DISPLAY_INVALID) {
 		if (p->viAppleID == id)
 			return true;
 		p++;
@@ -607,7 +606,7 @@ static uint32 max_depth(uint32 id)
 {
 	uint32 max = APPLE_1_BIT;
 	VideoInfo *p = VModes;
-	while (p->viType != DIS_INVALID) {
+	while (p->viType != DISPLAY_INVALID) {
 		if (p->viAppleID == id && p->viAppleMode > max)
 			max = p->viAppleMode;
 		p++;
@@ -619,7 +618,7 @@ static uint32 max_depth(uint32 id)
 static void get_size_of_resolution(int id, uint32 &x, uint32 &y)
 {
 	VideoInfo *p = VModes;
-	while (p->viType != DIS_INVALID) {
+	while (p->viType != DISPLAY_INVALID) {
 		if (p->viAppleID == id) {
 			x = p->viXsize;
 			y = p->viYsize;
@@ -839,7 +838,7 @@ static int16 VideoStatus(uint32 pb, VidLocals *csSave)
 				ReadMacInt16(param + csDepthMode)));
 
 			// find right video mode						
-			for (int i=0; VModes[i].viType!=DIS_INVALID; i++) {
+			for (int i=0; VModes[i].viType!=DISPLAY_INVALID; i++) {
 				if ((ReadMacInt16(param + csDepthMode) == VModes[i].viAppleMode) &&
 					(ReadMacInt32(param + csDisplayModeID) == VModes[i].viAppleID)) {
 					uint32 vpb = ReadMacInt32(param + csVPBlockPtr);
@@ -908,7 +907,7 @@ static int16 VideoStatus(uint32 pb, VidLocals *csSave)
 			D(bug("GetModeTiming mode %08lx\n", ReadMacInt32(param + csTimingMode)));
 			WriteMacInt32(param + csTimingFormat, kDeclROMtables);
 			WriteMacInt32(param + csTimingFlags, (1<<kModeValid)|(1<<kModeSafe)|(1<<kShowModeNow));		// Mode valid, safe, default and shown in Monitors panel
-			for (int i=0; VModes[i].viType!=DIS_INVALID; i++) {
+			for (int i=0; VModes[i].viType!=DISPLAY_INVALID; i++) {
 				if (ReadMacInt32(param + csTimingMode) == VModes[i].viAppleID) {
 					uint32 timing = timingUnknown;
 					uint32 flags = (1<<kModeValid) | (1<<kShowModeNow);

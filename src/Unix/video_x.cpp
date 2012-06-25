@@ -927,7 +927,7 @@ static bool open_display(void)
 	}
 
 	// Build up visualFormat structure
-	visualFormat.fullscreen = (display_type == DIS_SCREEN);
+	visualFormat.fullscreen = (display_type == DISPLAY_SCREEN);
 	visualFormat.depth = visualInfo.depth;
 	visualFormat.Rmask = visualInfo.red_mask;
 	visualFormat.Gmask = visualInfo.green_mask;
@@ -1002,10 +1002,10 @@ static bool open_display(void)
 
 	bool display_open;
 	switch (display_type) {
-	case DIS_SCREEN:
+	case DISPLAY_SCREEN:
 		display_open = open_dga(VModes[cur_mode].viXsize, VModes[cur_mode].viYsize);
 		break;
-	case DIS_WINDOW:
+	case DISPLAY_WINDOW:
 		display_open = open_window(VModes[cur_mode].viXsize, VModes[cur_mode].viYsize);
 		break;
 	default:
@@ -1123,9 +1123,9 @@ static void close_dga(void)
 
 static void close_display(void)
 {
-	if (display_type == DIS_SCREEN)
+	if (display_type == DISPLAY_SCREEN)
 		close_dga();
-	else if (display_type == DIS_WINDOW)
+	else if (display_type == DISPLAY_WINDOW)
 		close_window();
 
 	// Close window
@@ -1284,7 +1284,7 @@ static int find_apple_resolution(int xsize, int ysize)
 // Find mode in list of supported modes
 static int find_mode(int apple_mode, int apple_id, int type)
 {
-	for (VideoInfo *p = VModes; p->viType != DIS_INVALID; p++) {
+	for (VideoInfo *p = VModes; p->viType != DISPLAY_INVALID; p++) {
 		if (p->viType == type && p->viAppleID == apple_id && p->viAppleMode == apple_mode)
 			return p - VModes;
 	}
@@ -1347,8 +1347,8 @@ static void add_mode(VideoInfo *&p, uint32 allow, uint32 test, int apple_mode, i
 // Add standard list of windowed modes for given color depth
 static void add_window_modes(VideoInfo *&p, int window_modes, int mode)
 {
-	add_mode(p, window_modes, 1, mode, APPLE_W_640x480, DIS_WINDOW);
-	add_mode(p, window_modes, 2, mode, APPLE_W_800x600, DIS_WINDOW);
+	add_mode(p, window_modes, 1, mode, APPLE_W_640x480, DISPLAY_WINDOW);
+	add_mode(p, window_modes, 2, mode, APPLE_W_800x600, DISPLAY_WINDOW);
 }
 
 static bool has_mode(int x, int y)
@@ -1488,20 +1488,20 @@ PlatformVideo::DeviceInit(void)
 	const char *mode_str = PrefsFindString("screen");
 	int default_width = 640, default_height = 480;
 	if (mode_str) {
-		display_type = DIS_INVALID;
+		display_type = DISPLAY_INVALID;
 		if (sscanf(mode_str, "win/%d/%d", &default_width, &default_height) == 2)
-			display_type = DIS_WINDOW;
+			display_type = DISPLAY_WINDOW;
 #ifdef ENABLE_XF86_DGA
 		else if (has_dga && sscanf(mode_str, "dga/%d/%d", &default_width, &default_height) == 2)
-			display_type = DIS_SCREEN;
+			display_type = DISPLAY_SCREEN;
 #endif
 #ifdef ENABLE_FBDEV_DGA
 		else if (has_fbdev_dga && sscanf(mode_str, "fbdev/%d/%d", &default_width, &default_height) == 2) {
 			is_fbdev_dga_mode = true;
-			display_type = DIS_SCREEN;
+			display_type = DISPLAY_SCREEN;
 		}
 #endif
-		if (display_type == DIS_INVALID) {
+		if (display_type == DISPLAY_INVALID) {
 			D(bug("Invalid screen mode specified, defaulting to old modes selection\n"));
 			mode_str = NULL;
 		}
@@ -1529,18 +1529,18 @@ PlatformVideo::DeviceInit(void)
 
 	VideoInfo *p = VModes;
 	if (mode_str) {
-		if (display_type == DIS_WINDOW) {
+		if (display_type == DISPLAY_WINDOW) {
 			for (unsigned int d = APPLE_1_BIT; d <= APPLE_32_BIT; d++) {
 				if (find_visual_for_depth(d)) {
 					if (default_width > 640 && default_height > 480)
-						add_mode(p, 3, 1, d, APPLE_W_640x480, DIS_WINDOW);
+						add_mode(p, 3, 1, d, APPLE_W_640x480, DISPLAY_WINDOW);
 					if (default_width > 800 && default_height > 600)
-						add_mode(p, 3, 2, d, APPLE_W_800x600, DIS_WINDOW);
+						add_mode(p, 3, 2, d, APPLE_W_800x600, DISPLAY_WINDOW);
 					add_custom_mode(p, display_type, default_width, default_height, d, APPLE_CUSTOM);
 				}
 			}
 #ifdef ENABLE_VOSF
-		} else if (display_type == DIS_SCREEN && is_fbdev_dga_mode) {
+		} else if (display_type == DISPLAY_SCREEN && is_fbdev_dga_mode) {
 			for (unsigned int d = APPLE_1_BIT; d <= default_mode; d++)
 				if (find_visual_for_depth(d))
 					add_custom_mode(p, display_type, default_width, default_height, d, APPLE_CUSTOM);
@@ -1549,7 +1549,7 @@ PlatformVideo::DeviceInit(void)
 			add_custom_mode(p, display_type, default_width, default_height, default_mode, APPLE_CUSTOM);
 
 		// Add extra VidMode capable modes
-		if (display_type == DIS_SCREEN) {
+		if (display_type == DISPLAY_SCREEN) {
 			struct {
 				int w;
 				int h;
@@ -1589,24 +1589,24 @@ PlatformVideo::DeviceInit(void)
 				add_window_modes(p, window_modes, d);
 	} else if (has_vidmode) {
 		if (has_mode(640, 480))
-			add_mode(p, screen_modes, 1, default_mode, APPLE_640x480, DIS_SCREEN);
+			add_mode(p, screen_modes, 1, default_mode, APPLE_640x480, DISPLAY_SCREEN);
 		if (has_mode(800, 600))
-			add_mode(p, screen_modes, 2, default_mode, APPLE_800x600, DIS_SCREEN);
+			add_mode(p, screen_modes, 2, default_mode, APPLE_800x600, DISPLAY_SCREEN);
 		if (has_mode(1024, 768))
-			add_mode(p, screen_modes, 4, default_mode, APPLE_1024x768, DIS_SCREEN);
+			add_mode(p, screen_modes, 4, default_mode, APPLE_1024x768, DISPLAY_SCREEN);
 		if (has_mode(1152, 768))
-			add_mode(p, screen_modes, 64, default_mode, APPLE_1152x768, DIS_SCREEN);
+			add_mode(p, screen_modes, 64, default_mode, APPLE_1152x768, DISPLAY_SCREEN);
 		if (has_mode(1152, 900))
-			add_mode(p, screen_modes, 8, default_mode, APPLE_1152x900, DIS_SCREEN);
+			add_mode(p, screen_modes, 8, default_mode, APPLE_1152x900, DISPLAY_SCREEN);
 		if (has_mode(1280, 1024))
-			add_mode(p, screen_modes, 16, default_mode, APPLE_1280x1024, DIS_SCREEN);
+			add_mode(p, screen_modes, 16, default_mode, APPLE_1280x1024, DISPLAY_SCREEN);
 		if (has_mode(1600, 1200))
-			add_mode(p, screen_modes, 32, default_mode, APPLE_1600x1200, DIS_SCREEN);
+			add_mode(p, screen_modes, 32, default_mode, APPLE_1600x1200, DISPLAY_SCREEN);
 	} else if (screen_modes) {
 		int xsize = DisplayWidth(x_display, screen);
 		int ysize = DisplayHeight(x_display, screen);
 		int apple_id = find_apple_resolution(xsize, ysize);
-		p->viType = DIS_SCREEN;
+		p->viType = DISPLAY_SCREEN;
 		p->viRowBytes = 0;
 		p->viXsize = xsize;
 		p->viYsize = ysize;
@@ -1614,7 +1614,7 @@ PlatformVideo::DeviceInit(void)
 		p->viAppleID = apple_id;
 		p++;
 	}
-	p->viType = DIS_INVALID;	// End marker
+	p->viType = DISPLAY_INVALID;	// End marker
 	p->viRowBytes = 0;
 	p->viXsize = p->viYsize = 0;
 	p->viAppleMode = 0;
@@ -1627,14 +1627,14 @@ PlatformVideo::DeviceInit(void)
 		int screen_height = DisplayHeight(x_display, screen);
 		int apple_id = find_apple_resolution(screen_width, screen_height);
 		if (apple_id != -1)
-			cur_mode = find_mode(default_mode, apple_id, DIS_SCREEN);
+			cur_mode = find_mode(default_mode, apple_id, DISPLAY_SCREEN);
 	} else if (has_dga && mode_str)
-		cur_mode = find_mode(default_mode, APPLE_CUSTOM, DIS_SCREEN);
+		cur_mode = find_mode(default_mode, APPLE_CUSTOM, DISPLAY_SCREEN);
 
 	if (cur_mode == -1) {
 		// pick up first windowed mode available
-		for (VideoInfo *p = VModes; p->viType != DIS_INVALID; p++) {
-			if (p->viType == DIS_WINDOW && p->viAppleMode == default_mode) {
+		for (VideoInfo *p = VModes; p->viType != DISPLAY_INVALID; p++) {
+			if (p->viType == DISPLAY_WINDOW && p->viAppleMode == default_mode) {
 				cur_mode = p - VModes;
 				break;
 			}
@@ -1644,7 +1644,7 @@ PlatformVideo::DeviceInit(void)
 
 #if DEBUG
 	D(bug("Available video modes:\n"));
-	for (p = VModes; p->viType != DIS_INVALID; p++) {
+	for (p = VModes; p->viType != DISPLAY_INVALID; p++) {
 		int bits = depth_of_video_mode(p->viAppleMode);
 		D(bug(" %dx%d (ID %02x), %d colors\n", p->viXsize, p->viYsize, p->viAppleID, 1 << bits));
 	}
@@ -1684,7 +1684,7 @@ PlatformVideo::DeviceInit(void)
  */
 
 void
-PlatformVideo::VideoShutdown(void)
+PlatformVideo::DeviceShutdown(void)
 {
 	// Stop redraw thread
 	if (redraw_thread_active) {
@@ -1732,7 +1732,7 @@ PlatformVideo::VideoShutdown(void)
 
 static void suspend_emul(void)
 {
-	if (display_type == DIS_SCREEN) {
+	if (display_type == DISPLAY_SCREEN) {
 		// Release ctrl key
 		gADBInput->KeyUp(0x36);
 		ctrl_down = false;
@@ -1834,7 +1834,7 @@ void
 PlatformVideo::DeviceQuitFullScreen(void)
 {
 	D(bug("%s\n", __func__));
-	if (display_type == DIS_SCREEN) {
+	if (display_type == DISPLAY_SCREEN) {
 		quit_full_screen = true;
 		while (!quit_full_screen_ack) ;
 	}
@@ -2164,7 +2164,7 @@ int16 video_mode_change(VidLocals *csSave, uint32 ParamPtr)
 	    (csSave->saveMode == ReadMacInt16(ParamPtr + csMode))) return noErr;
 
 	/* first find video mode in table */
-	for (int i=0; VModes[i].viType != DIS_INVALID; i++) {
+	for (int i=0; VModes[i].viType != DISPLAY_INVALID; i++) {
 		if ((ReadMacInt16(ParamPtr + csMode) == VModes[i].viAppleMode) &&
 		    (ReadMacInt32(ParamPtr + csData) == VModes[i].viAppleID)) {
 			csSave->saveMode = ReadMacInt16(ParamPtr + csMode);
@@ -2243,7 +2243,7 @@ void video_set_palette(void)
 		// We have to redraw everything because the interpretation of pixel values changed
 		LOCK_VOSF;
 		PFLAG_SET_ALL;
-		if (display_type == DIS_SCREEN)
+		if (display_type == DISPLAY_SCREEN)
 			PFLAG_SET_VERY_DIRTY;
 		UNLOCK_VOSF;
 	}
@@ -2262,7 +2262,7 @@ void video_set_palette(void)
 
 bool video_can_change_cursor(void)
 {
-	return hw_mac_cursor_accl && (display_type != DIS_SCREEN);
+	return hw_mac_cursor_accl && (display_type != DISPLAY_SCREEN);
 }
 
 
@@ -2413,7 +2413,7 @@ static void handle_palette_changes(void)
 			int num = vis->map_entries;
 			bool set_clut = true;
 			if (!IsDirectMode(mode) && color_class == DirectColor) {
-				if (display_type == DIS_WINDOW)
+				if (display_type == DISPLAY_WINDOW)
 					set_clut = false; // Indexed mode on true color screen, don't set CLUT
 			}
 
@@ -2427,7 +2427,7 @@ static void handle_palette_changes(void)
 		}
 
 #ifdef ENABLE_XF86_DGA
-		if (display_type == DIS_SCREEN && !is_fbdev_dga_mode) {
+		if (display_type == DISPLAY_SCREEN && !is_fbdev_dga_mode) {
 			current_dga_cmap ^= 1;
 			if (!IsDirectMode(mode) && cmap[current_dga_cmap])
 				XF86DGAInstallColormap(x_display, screen, cmap[current_dga_cmap]);
@@ -2472,7 +2472,7 @@ static void *redraw_func(void *arg)
 			// Quit DGA mode if requested
 			if (quit_full_screen) {
 				quit_full_screen = false;
-				if (display_type == DIS_SCREEN) {
+				if (display_type == DISPLAY_SCREEN) {
 					XDisplayLock();
 #if defined(ENABLE_XF86_DGA) || defined(ENABLE_FBDEV_DGA)
 #ifdef ENABLE_XF86_DGA
@@ -2494,7 +2494,7 @@ static void *redraw_func(void *arg)
 
 			// Refresh display and set cursor image in window mode
 			static int tick_counter = 0;
-			if (display_type == DIS_WINDOW) {
+			if (display_type == DISPLAY_WINDOW) {
 				tick_counter++;
 				if (tick_counter >= frame_skip) {
 					tick_counter = 0;

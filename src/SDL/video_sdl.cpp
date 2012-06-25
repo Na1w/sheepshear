@@ -70,21 +70,6 @@
 using std::vector;
 static vector<VIDEO_MODE> VideoModes;
 
-// Display types
-#ifdef SHEEPSHAVER
-enum {
-	DISPLAY_WINDOW = DIS_WINDOW,					// windowed display
-	DISPLAY_SCREEN = DIS_SCREEN						// fullscreen display
-};
-extern int display_type;							// See enum above
-#else
-enum {
-	DISPLAY_WINDOW,									// windowed display
-	DISPLAY_SCREEN									// fullscreen display
-};
-static int display_type = DISPLAY_WINDOW;			// See enum above
-#endif
-
 // Constants
 #ifdef WIN32
 const char KEYCODE_FILE_NAME[] = "BasiliskII_keycodes";
@@ -1110,14 +1095,12 @@ bool SDL_monitor_desc::video_open(void)
 	return true;
 }
 
-#ifdef SHEEPSHAVER
-bool VideoInit(void)
+
+bool
+PlatformVideo::DeviceInit(void)
 {
+	// TODO: Store classic somwhere global
 	const bool classic = false;
-#else
-bool VideoInit(bool classic)
-{
-#endif
 	classic_mode = classic;
 
 #ifdef ENABLE_VOSF
@@ -1273,7 +1256,7 @@ bool VideoInit(bool classic)
 	for (int i = 0; i < VideoModes.size(); i++)
 		VModes[i] = VideoModes[i];
 	VideoInfo *p = &VModes[VideoModes.size()];
-	p->viType = DIS_INVALID;        // End marker
+	p->viType = DISPLAY_INVALID;        // End marker
 	p->viRowBytes = 0;
 	p->viXsize = p->viYsize = 0;
 	p->viAppleMode = 0;
@@ -1305,7 +1288,6 @@ bool VideoInit(bool classic)
 /*
  *  Deinitialization
  */
-
 // Close display
 void SDL_monitor_desc::video_close(void)
 {
@@ -1335,7 +1317,9 @@ void SDL_monitor_desc::video_close(void)
 	drv = NULL;
 }
 
-void VideoExit(void)
+
+void
+PlatformVideo::DeviceShutdown(void)
 {
 	// Close displays
 	vector<monitor_desc *>::iterator i, end = VideoMonitors.end();
@@ -1355,10 +1339,10 @@ void VideoExit(void)
 /*
  *  Close down full-screen mode (if bringing up error alerts is unsafe while in full-screen mode)
  */
-
-void VideoQuitFullScreen(void)
+void
+PlatformVideo::DeviceQuitFullScreen(void)
 {
-	D(bug("VideoQuitFullScreen()\n"));
+	D(bug("%s\n", __func__));
 	quit_full_screen = true;
 }
 
@@ -1370,9 +1354,9 @@ void VideoQuitFullScreen(void)
 /*
  *  Execute video VBL routine
  */
-
 #ifdef SHEEPSHAVER
-void VideoVBL(void)
+void
+PlatformVideo::DeviceVBL(void)
 {
 	// Emergency quit requested? Then quit
 	if (emerg_quit)
@@ -1483,7 +1467,7 @@ int16 video_mode_change(VidLocals *csSave, uint32 ParamPtr)
 	    (csSave->saveMode == ReadMacInt16(ParamPtr + csMode))) return noErr;
 
 	/* first find video mode in table */
-	for (int i=0; VModes[i].viType != DIS_INVALID; i++) {
+	for (int i=0; VModes[i].viType != DISPLAY_INVALID; i++) {
 		if ((ReadMacInt16(ParamPtr + csMode) == VModes[i].viAppleMode) &&
 		    (ReadMacInt32(ParamPtr + csData) == VModes[i].viAppleID)) {
 			csSave->saveMode = ReadMacInt16(ParamPtr + csMode);

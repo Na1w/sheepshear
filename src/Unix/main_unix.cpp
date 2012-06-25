@@ -1412,7 +1412,7 @@ static void *tick_func(void *arg)
 				r->gpr[24], r->gpr[25], r->gpr[26], r->gpr[27],
 				r->gpr[28], r->gpr[29], r->gpr[30], r->gpr[31]);
 			printf(str);
-			VideoQuitFullScreen();
+			gMacVideo->DeviceQuitFullScreen();
 
 #ifdef ENABLE_MON
 			// Start up mon in real-mode
@@ -2265,7 +2265,7 @@ void ErrorAlert(const char *text)
 		printf(GetString(STR_SHELL_ERROR_PREFIX), text);
 		return;
 	}
-	VideoQuitFullScreen();
+	gMacVideo->DeviceQuitFullScreen();
 	display_alert(STR_ERROR_ALERT_TITLE, STR_GUI_ERROR_PREFIX, STR_QUIT_BUTTON, text);
 #else
 	printf(GetString(STR_SHELL_ERROR_PREFIX), text);

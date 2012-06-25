@@ -17,21 +17,20 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef VIDEO_DEFS_H
 #define VIDEO_DEFS_H
+
 
 #include "macos_util.h"
 #include <stddef.h>
 
 
-/* 
+/*
  * Definitions for Display Manager
  */
- 
 /* csMode values describing pixel depth in VDSwitchInfo */
 enum {
-	firstVidMode=128,						// first depth mode, representing lowest supported
+	firstVidMode = 128,						// first depth mode, representing lowest supported
 											// pixel depth
 	secondVidMode, thirdVidMode, fourthVidMode, fifthVidMode, sixthVidMode
 											// following modes represent pixel depths in ascending
@@ -40,7 +39,7 @@ enum {
 
 /* csDisplayType values in VDDisplayConnectInfoRec */
 enum {
-	kUnknownConnect=1,						// reserved
+	kUnknownConnect = 1,					// reserved
 	kPanelTFTConnect,						// fixed-in-place LCS (TFT, aka "active matrix") panels
 	kFixedModeCRTConnect,					// very limited displays
 	kMultiModeCRT1Connect,					// 12" optional, 13" default, 16" required
@@ -60,12 +59,12 @@ enum {
 
 /* csConnectFlags values in VDDisplayConnectInfoRec */
 enum {
-	kAllModesValid=0,						// all display modes not deleted by PrimaryInit code 
+	kAllModesValid = 0,						// all display modes not deleted by PrimaryInit code 
 											// are optional
 	kAllModesSafe,							// all display modes not deleted by PrimaryInit code
 											// are required; is you set this bit, set the
 											// kAllModesValid bit, too
-	kHasDirectConnect=3,					// for future expansions, setting this bit means that
+	kHasDirectConnect = 3,					// for future expansions, setting this bit means that
 											// your driver can talk directly to the display
 											// (e.g. there is a serial data link via sense lines)
 	kIsMonoDev,								// this display does not support color
@@ -392,12 +391,14 @@ enum {
 	acclDrawProc		= offsetof(accl_params, draw_proc)
 };
 
+
 // Hook info for NQDMisc
 struct accl_hook_info {
 	uint32 draw_func;
 	uint32 sync_func;
 	uint32 code;
 };
+
 
 // Hook function index
 enum {
@@ -409,5 +410,14 @@ enum {
 	// 5: lines
 	// 6: fill
 };
+
+
+// Display types
+enum {
+	DISPLAY_INVALID,
+	DISPLAY_WINDOW,
+	DISPLAY_SCREEN
+};
+static int display_type;
 
 #endif

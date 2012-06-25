@@ -33,6 +33,7 @@
 #include "prefs.h"
 #include "prefs_editor.h"
 #include "util_windows.h"
+#include "video.h"
 #include "b2ether/inc/b2ether_hl.h"
 
 
@@ -915,7 +916,6 @@ enum {
 
 static GtkWidget *w_frameskip, *w_display_x, *w_display_y;
 static GtkWidget *l_frameskip, *l_display_x, *l_display_y;
-static int display_type;
 static int dis_width, dis_height;
 
 // Hide/show graphics widgets
