@@ -1,5 +1,5 @@
-=============================
 SheepShear -- A fork of SheepShaver
+===================================
 
 While SheepShaver provides decent PowerPC emulation
 on Linux, BeOS, and Windows, it development has been
@@ -9,8 +9,8 @@ To ensure a quality MacOS Classic emulator continues
 on to exist in a functioning state for Linux and Haiku,
 SheepShear was created as a fork of the SheepShaver codebase
 
------------------------------
 Targeted Platforms:
+-------------------
  * Haiku
  * Linux
  * MacOS X
@@ -18,21 +18,21 @@ Targeted Platforms:
      dyngen engine we use doesn't play nicely with clang :(
  * Windows ?
 
------------------------------
 TODO Items:
+-----------
  * Refactor code base, clean up extern functions to classes
  * Better GUI
  * Better Icons
  * Easier to use
 
------------------------------
 Done Items:
+-----------
  * Basilisk II code integrated
  * Fork renamed to SheepShear
 
 
-=============================
 Frequently asked questions:
+===========================
 
 SheepShear is based on SheepShaver... What is SheepShaver?
  - SheepShaver is an excellent PowerPC emulator found here:
@@ -46,7 +46,10 @@ Where can I converse in a public place on this fine product?
  - IRC
    irc.freenode.net #sheepshear
 
-=============================
+How do I compile SheepShear?
+ - See COMPILE for instructions
+
 License
+=======
 
 SheepShear is licensed as GPLv2 just as SheepShaver.
