@@ -34,6 +34,7 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "sigsegv.h"
 #include "user_strings_beos.h"
 
 
@@ -59,6 +60,8 @@
 
 // Define for external components
 #define SHEEPSHAVER 1
+#define HAVE_SIGSEGV_SKIP_INSTRUCTION 1
+#define CONFIGURE_TEST_SIGSEGV_RECOVERY
 
 // High precision timing
 #define PRECISE_TIMING 1
@@ -76,7 +79,7 @@
 # define PPC_PROFILE_GENERIC_CALLS 0
 # define PPC_PROFILE_REGS_USE 0
 # define PPC_ENABLE_FPU_EXCEPTIONS 0
-# define PPC_ENABLE_JIT 1
+# define PPC_ENABLE_JIT 0
 # define KPX_MAX_CPUS 1
 # if defined(__i386__) || defined(__x86_64__)
 #  define DYNGEN_ASM_OPTS 1
@@ -88,11 +91,23 @@
 # define PPC_ENABLE_JIT 0
 #endif
 
+#define VAL64(a) (a ## l)
+#define UVAL64(a) (a ## ul)
+
 // Byte swap functions
 #define bswap_16 B_SWAP_INT16
 #define bswap_32 B_SWAP_INT32
 #define bswap_64 B_SWAP_INT64
 
+#ifdef WORDS_BIGENDIAN
+static inline uint16 tswap16(uint16 x) { return x; }
+static inline uint32 tswap32(uint32 x) { return x; }
+static inline uint64 tswap64(uint64 x) { return x; }
+#else
+static inline uint16 tswap16(uint16 x) { return bswap_16(x); }
+static inline uint32 tswap32(uint32 x) { return bswap_32(x); }
+static inline uint64 tswap64(uint64 x) { return bswap_64(x); }
+#endif
 
 // Time data type for Time Manager emulation
 typedef bigtime_t tm_time_t;

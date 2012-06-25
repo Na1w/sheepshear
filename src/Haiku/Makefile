@@ -30,6 +30,11 @@ TYPE=APP
 #	if two source files with the same name (source.c or source.cpp)
 #	are included from different directories.  Also note that spaces
 #	in folder names do not work well with this makefile.
+CPUSRCS=../kpx_cpu/src/mathlib/ieeefp.cpp ../kpx_cpu/src/mathlib/mathlib.cpp \
+	../kpx_cpu/src/cpu/ppc/ppc-cpu.cpp ../kpx_cpu/src/cpu/ppc/ppc-decode.cpp \
+	../kpx_cpu/src/cpu/ppc/ppc-execute.cpp ../kpx_cpu/src/cpu/ppc/ppc-translate.cpp \
+	../kpx_cpu/src/utils/utils-cpuinfo.cpp
+
 SRCS=../main.cpp main_beos.cpp ../prefs.cpp ../prefs_items.cpp prefs_beos.cpp \
     prefs_editor_beos.cpp sys_beos.cpp ../rom_patches.cpp ../rom_toolbox.cpp \
     ../rsrc_patches.cpp ../emul_op.cpp ../name_registry.cpp ../macos_util.cpp \
@@ -39,6 +44,10 @@ SRCS=../main.cpp main_beos.cpp ../prefs.cpp ../prefs_items.cpp prefs_beos.cpp \
     ../ether.cpp ether_beos.cpp ../serial.cpp serial_beos.cpp ../extfs.cpp \
     extfs_beos.cpp about_window_beos.cpp ../user_strings.cpp \
     user_strings_beos.cpp ../thunks.cpp
+
+# Dyngen cpu emulator
+#SRCS+=../kpx_cpu/sheepshaver_glue.cpp $(CPUSRCS)
+
 
 #	specify the resource files to use
 #	full path or a relative path to the resource file can be used.
@@ -88,7 +97,7 @@ OPTIMIZE=FULL
 #	to use.  For example, setting DEFINES to "DEBUG=1" will cause the
 #	compiler option "-DDEBUG=1" to be used.  Setting DEFINES to "DEBUG"
 #	would pass "-DDEBUG" on the compiler's command line.
-DEFINES=USE_JIT=1
+DEFINES=
 
 #	specify special warning levels
 #	if unspecified default warnings will be used
