@@ -86,7 +86,8 @@ PlatformAudio::DeviceClose()
 /*
  *  First source added, start audio stream
  */
-void audio_enter_stream()
+void
+PlatformAudio::StreamStart()
 {
 }
 
@@ -94,7 +95,8 @@ void audio_enter_stream()
 /*
  *  Last source removed, stop audio stream
  */
-void audio_exit_stream()
+void
+PlatformAudio::StreamEnd()
 {
 }
 

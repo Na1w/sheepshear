@@ -59,10 +59,6 @@ private:
 			int32			SetInfo(uint32 infoPtr, uint32 selector, uint32 sourceID);
 };
 
-
-extern void audio_enter_stream(void);
-extern void audio_exit_stream(void);
-
 extern int audio_frames_per_block;		// Number of audio frames per block
 extern uint32 audio_component_flags;	// Component feature flags
 

@@ -45,6 +45,9 @@ protected:
 		uint32				GetSpeakerVolume();
 		void				SetSpeakerVolume(uint32 vol);
 
+		void				StreamStart();
+		void				StreamEnd();
+
 		struct audio_status	fAudioStatus;
 		bool				fAudioOpen;
 		int					fSampleRateIndex;

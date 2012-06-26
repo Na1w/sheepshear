@@ -64,9 +64,6 @@ static pthread_attr_t stream_thread_attr;			// Streaming thread attributes
 static bool stream_thread_active = false;			// Flag: streaming thread installed
 static volatile bool stream_thread_cancel = false;	// Flag: cancel streaming thread
 
-// Prototype hook
-static void *stream_hook(void *arg);
-
 
 /*
  *  Attempt to open DSP device
@@ -227,6 +224,16 @@ PlatformAudio::DeviceOpenESD(void)
 }
 
 
+/*
+ *  Streaming function
+ */
+static void
+*stream_hook(void *arg)
+{
+	gMacAudio->Stream(arg);
+}
+
+
 bool
 PlatformAudio::DeviceOpen(void)
 {
@@ -361,8 +368,8 @@ PlatformAudio::DeviceShutdown(void)
 /*
  *  First source added, start audio stream
  */
-
-void audio_enter_stream()
+void
+PlatformAudio::StreamStart()
 {
 	// Streaming thread is always running to avoid clicking noises
 }
@@ -371,21 +378,10 @@ void audio_enter_stream()
 /*
  *  Last source removed, stop audio stream
  */
-
-void audio_exit_stream()
+void
+PlatformAudio::StreamEnd()
 {
 	// Streaming thread is always running to avoid clicking noises
-}
-
-
-/*
- *  Streaming function
- */
-
-static
-void *stream_hook(void *arg)
-{
-	gMacAudio->Stream(arg);
 }
 
 

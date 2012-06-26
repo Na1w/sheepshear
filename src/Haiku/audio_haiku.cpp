@@ -205,8 +205,8 @@ PlatformAudio::DeviceClose(void)
 /*
  *  First source added, start audio stream
  */
-
-void audio_enter_stream()
+void
+PlatformAudio::StreamStart()
 {
 	while (send_data(am_thread, MSG_ENTER_STREAM, NULL, 0) == B_INTERRUPTED) ;
 	while (acquire_sem(am_done_sem) == B_INTERRUPTED) ;
@@ -216,8 +216,8 @@ void audio_enter_stream()
 /*
  *  Last source removed, stop audio stream
  */
-
-void audio_exit_stream()
+void
+PlatformAudio::StreamEnd()
 {
 	while (send_data(am_thread, MSG_EXIT_STREAM, NULL, 0) == B_INTERRUPTED) ;
 	while (acquire_sem(am_done_sem) == B_INTERRUPTED) ;
@@ -227,7 +227,6 @@ void audio_exit_stream()
 /*
  *  Streaming function
  */
-
 static uint32 apple_stream_info;	// Mac address of SoundComponentData struct describing next buffer
 
 
@@ -272,7 +271,6 @@ PlatformAudio::PlayBuffer(void *arg, void *buf, size_t size, const media_raw_aud
 /*
  *  MacOS audio interrupt, read next data block
  */
-
 void
 PlatformAudio::DeviceInterrupt(void)
 {

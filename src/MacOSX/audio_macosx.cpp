@@ -132,7 +132,8 @@ PlatformAudio::DeviceShutdown(void)
 /*
  *  First source added, start audio stream
  */
-void audio_enter_stream()
+void
+PlatformAudio::StreamStart()
 {
 	// Streaming thread is always running to avoid clicking noises
 }
@@ -141,7 +142,8 @@ void audio_enter_stream()
 /*
  *  Last source removed, stop audio stream
  */
-void audio_exit_stream()
+void
+PlatformAudio::StreamEnd()
 {
 	// Streaming thread is always running to avoid clicking noises
 }

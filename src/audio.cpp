@@ -465,7 +465,7 @@ MacAudio::Dispatch(uint32 params, uint32 globals)
 					goto adat_error;
 			}
 			if (open_count == 0)
-				audio_enter_stream();
+				StreamStart();
 			open_count++;
 			return noErr;
 
@@ -489,7 +489,7 @@ adat_error:	printf("FATAL: audio component data block initialization error\n");
 					audio_data = 0;
 				}
 				fAudioStatus.num_sources = 0;
-				audio_exit_stream();
+				StreamEnd();
 			}
 			return noErr;
 
