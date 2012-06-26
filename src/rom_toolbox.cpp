@@ -34,24 +34,25 @@ void
 DecodeLZSS(const uint8 *src, uint8 *dest, int size)
 {
 	char dict[0x1000];
-	int run_mask = 0, dict_idx = 0xfee;
+	int runMask = 0;
+	int dictIDX = 0xfee;
 	for (;;) {
-		if (run_mask < 0x100) {
+		if (runMask < 0x100) {
 			// Start new run
 			if (--size < 0)
 				break;
-			run_mask = *src++ | 0xff00;
+			runMask = *src++ | 0xff00;
 		}
-		bool bit = run_mask & 1;
-		run_mask >>= 1;
+		bool bit = runMask & 1;
+		runMask >>= 1;
 		if (bit) {
 			// Verbatim copy
 			if (--size < 0)
 				break;
 			int c = *src++;
-			dict[dict_idx++] = c;
+			dict[dictIDX++] = c;
 			*dest++ = c;
-			dict_idx &= 0xfff;
+			dictIDX &= 0xfff;
 		} else {
 			// Copy from dictionary
 			if (--size < 0)
@@ -64,10 +65,10 @@ DecodeLZSS(const uint8 *src, uint8 *dest, int size)
 			cnt = (cnt & 0x0f) + 3;
 			while (cnt--) {
 				char c = dict[idx++];
-				dict[dict_idx++] = c;
+				dict[dictIDX++] = c;
 				*dest++ = c;
 				idx &= 0xfff;
-				dict_idx &= 0xfff;
+				dictIDX &= 0xfff;
 			}
 		}
 	}
@@ -78,22 +79,22 @@ DecodeLZSS(const uint8 *src, uint8 *dest, int size)
 void
 DecodeParcels(const uint8 *src, uint8 *dest, int size)
 {
-	uint32 parcel_offset = 0x14;
+	uint32 parcelOffset = 0x14;
 	D(bug("Offset   Type Name\n"));
-	while (parcel_offset != 0) {
-		const uint32 *parcel_data = (uint32 *)(src + parcel_offset);
-		uint32 next_offset = ntohl(parcel_data[0]);
-		uint32 parcel_type = ntohl(parcel_data[1]);
-		D(bug("%08x %c%c%c%c %s\n", parcel_offset,
-			(parcel_type >> 24) & 0xff, (parcel_type >> 16) & 0xff,
-			(parcel_type >> 8) & 0xff, parcel_type & 0xff, &parcel_data[6]));
-		if (parcel_type == FOURCC('r', 'o', 'm', ' ')) {
-		uint32 lzss_offset  = ntohl(parcel_data[2]);
-		uint32 lzss_size = ((uintptr)src + next_offset)
-			- ((uintptr)parcel_data + lzss_offset);
-			DecodeLZSS((uint8 *)parcel_data + lzss_offset, dest, lzss_size);
+	while (parcelOffset != 0) {
+		const uint32 *parcelData = (uint32 *)(src + parcelOffset);
+		uint32 nextOffset = ntohl(parcelData[0]);
+		uint32 parcelType = ntohl(parcelData[1]);
+		D(bug("%08x %c%c%c%c %s\n", parcelOffset,
+			(parcelType >> 24) & 0xff, (parcelType >> 16) & 0xff,
+			(parcelType >> 8) & 0xff, parcelType & 0xff, &parcelData[6]));
+		if (parcelType == FOURCC('r', 'o', 'm', ' ')) {
+		uint32 lzssOffset  = ntohl(parcelData[2]);
+		uint32 lzssSize = ((uintptr)src + nextOffset)
+			- ((uintptr)parcelData + lzssOffset);
+			DecodeLZSS((uint8 *)parcelData + lzssOffset, dest, lzssSize);
 		}
-		parcel_offset = next_offset;
+		parcelOffset = nextOffset;
 	}
 }
 
@@ -110,42 +111,43 @@ DecodeROM(uint8 *data, uint32 size, uint8 *result)
 		return true;
 	} else if (strncmp((char *)data, "<CHRP-BOOT>", 11) == 0) {
 		// CHRP compressed ROM image
-		uint32 image_offset, image_size;
-		bool decode_info_ok = false;
+		uint32 imageOffset;
+		uint32 imageSize;
+		bool decodeSuccess = false;
 
 		char *s = strstr((char *)data, "constant lzss-offset");
 		if (s != NULL) {
 			// Probably a plain LZSS compressed ROM image
-			if (sscanf(s - 7, "%06x", &image_offset) == 1) {
+			if (sscanf(s - 7, "%06x", &imageOffset) == 1) {
 				s = strstr((char *)data, "constant lzss-size");
-				if (s != NULL && (sscanf(s - 7, "%06x", &image_size) == 1))
-					decode_info_ok = true;
+				if (s != NULL && (sscanf(s - 7, "%06x", &imageSize) == 1))
+					decodeSuccess = true;
 			}
 		} else {
 			// Probably a MacOS 9.2.x ROM image
 			s = strstr((char *)data, "constant parcels-offset");
 			if (s != NULL) {
-				if (sscanf(s - 7, "%06x", &image_offset) == 1) {
+				if (sscanf(s - 7, "%06x", &imageOffset) == 1) {
 					s = strstr((char *)data, "constant parcels-size");
-					if (s != NULL && (sscanf(s - 7, "%06x", &image_size) == 1))
-						decode_info_ok = true;
+					if (s != NULL && (sscanf(s - 7, "%06x", &imageSize) == 1))
+						decodeSuccess = true;
 				}
 			}
 		}
 		// No valid information to decode the ROM found?
-		if (!decode_info_ok)
+		if (!decodeSuccess)
 			return false;
 
 		// Check signature, this could be a parcels-based ROM image
-		uint32 rom_signature = ntohl(*(uint32 *)(data + image_offset));
-		if (rom_signature == FOURCC('p', 'r', 'c', 'l')) {
-			D(bug("Offset of parcels data: %08x\n", image_offset));
-			D(bug("Size of parcels data: %08x\n", image_size));
-			DecodeParcels(data + image_offset, result, image_size);
+		uint32 romSignature = ntohl(*(uint32 *)(data + imageOffset));
+		if (romSignature == FOURCC('p', 'r', 'c', 'l')) {
+			D(bug("Offset of parcels data: %08x\n", imageOffset));
+			D(bug("Size of parcels data: %08x\n", imageSize));
+			DecodeParcels(data + imageOffset, result, imageSize);
 		} else {
-			D(bug("Offset of compressed data: %08x\n", image_offset));
-			D(bug("Size of compressed data: %08x\n", image_size));
-			DecodeLZSS(data + image_offset, result, image_size);
+			D(bug("Offset of compressed data: %08x\n", imageOffset));
+			D(bug("Size of compressed data: %08x\n", imageSize));
+			DecodeLZSS(data + imageOffset, result, imageSize);
 		}
 		return true;
 	}
@@ -153,6 +155,9 @@ DecodeROM(uint8 *data, uint32 size, uint8 *result)
 }
 
 
+/*
+ * Decode ROM image into an easily parseable struct
+ */
 bool
 DecodeROMInfo(const char* fileName, romInfo *info)
 {
@@ -171,7 +176,7 @@ DecodeROMInfo(const char* fileName, romInfo *info)
 	// Decode Mac ROM
 	uint8 *decodedROM = (uint8*)malloc(ROM_AREA_SIZE);
 	if (!DecodeROM(romBuffer, actualSize, decodedROM)) {
-		bug("%s: Invalid Mac ROM!\n");
+		bug("%s: Invalid Mac ROM! (%s)\n", __func__, fileName);
 		free(decodedROM);
 		delete[] romBuffer;
 		return false;
