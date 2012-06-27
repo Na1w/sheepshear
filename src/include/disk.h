@@ -17,9 +17,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef DISK_H
 #define DISK_H
+
 
 const int DiskRefNum = -63;				// RefNum of driver
 const uint16 DiskDriverFlags = 0x6f04;	// Driver flags
@@ -39,5 +39,6 @@ extern int16 DiskOpen(uint32 pb, uint32 dce);
 extern int16 DiskPrime(uint32 pb, uint32 dce);
 extern int16 DiskControl(uint32 pb, uint32 dce);
 extern int16 DiskStatus(uint32 pb, uint32 dce);
+
 
 #endif

@@ -17,9 +17,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef EMUL_OP_H
 #define EMUL_OP_H
+
 
 // PowerPC opcodes
 const uint32 POWERPC_NOP = 0x60000000;
@@ -108,5 +108,6 @@ const uint16 M68K_EMUL_OP_IDLE_TIME = M68K_EMUL_BREAK + OP_IDLE_TIME;
 const uint16 M68K_EMUL_OP_IDLE_TIME_2 = M68K_EMUL_BREAK + OP_IDLE_TIME_2;
 
 extern "C" void EmulOp(M68kRegisters *r, uint32 pc, int selector);
+
 
 #endif

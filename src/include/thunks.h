@@ -17,9 +17,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef THUNKS_H
 #define THUNKS_H
+
 
 #include "cpu_emulation.h"
 
@@ -221,5 +221,6 @@ struct SheepString : public SheepVar
 	char *value() const
 		{ return (char *)Mac2HostAddr(addr()); }
 };
+
 
 #endif

@@ -18,6 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#ifndef ROM_TOOLBOX_H
+#define ROM_TOOLBOX_H
 
 
 #include "sysdeps.h"
@@ -37,3 +39,6 @@ void DecodeLZSS(const uint8 *src, uint8 *dest, int size);
 void DecodeParcels(const uint8 *src, uint8 *dest, int size);
 bool DecodeROM(uint8 *data, uint32 size, uint8 *result);
 bool DecodeROMInfo(const char* fileName, romInfo *info);
+
+
+#endif /* ROM_TOOLBOX_H */

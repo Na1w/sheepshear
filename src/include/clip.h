@@ -17,14 +17,15 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef CLIP_H
 #define CLIP_H
+
 
 extern void ClipInit(void);
 extern void ClipExit(void);
 
 extern void PutScrap(uint32 type, void *scrap, int32 length);
 extern void GetScrap(void **handle, uint32 type, int32 offset);
+
 
 #endif

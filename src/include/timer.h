@@ -17,9 +17,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef TIMER_H
 #define TIMER_H
+
 
 extern void TimerInit(void);
 extern void TimerExit(void);
@@ -45,5 +45,6 @@ extern int32 timer_host2mac_time(tm_time_t hosttime);
 // Suspend execution of emulator thread and resume it on events
 extern void idle_wait(void);
 extern void idle_resume(void);
+
 
 #endif

@@ -17,9 +17,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef SYS_H
 #define SYS_H
+
 
 // Supported media types
 enum {
@@ -72,5 +72,6 @@ extern bool SysCDStop(void *fh, uint8 lead_out_m, uint8 lead_out_s, uint8 lead_o
 extern bool SysCDScan(void *fh, uint8 start_m, uint8 start_s, uint8 start_f, bool reverse);
 extern void SysCDSetVolume(void *fh, uint8 left, uint8 right);
 extern void SysCDGetVolume(void *fh, uint8 &left, uint8 &right);
+
 
 #endif

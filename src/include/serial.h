@@ -17,9 +17,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef SERIAL_H
 #define SERIAL_H
+
 
 /*
  *  port:
@@ -95,5 +95,6 @@ public:
 };
 
 extern SERDPort *the_serd_port[2];
+
 
 #endif

@@ -17,9 +17,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef PREFS_H
 #define PREFS_H
+
 
 #include <stdio.h>
 
@@ -85,5 +85,6 @@ extern prefs_desc common_prefs_items[];
 
 // List of platform-specific preferences items
 extern prefs_desc platform_prefs_items[];
+
 
 #endif

@@ -17,9 +17,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef SERIAL_DEFS_H
 #define SERIAL_DEFS_H
+
 
 // Error codes
 enum {
@@ -165,5 +165,6 @@ enum {	 // SerSta struct
 	staDsrHold = 6,
 	staModemStatus = 7
 };
+
 
 #endif

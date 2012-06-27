@@ -17,7 +17,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef EXTFS_H
 #define EXTFS_H
 
@@ -47,5 +46,6 @@ extern const char *macroman_to_host_encoding(const char *filename); // What if t
 
 // Maximum length of full path name
 const int MAX_PATH_LENGTH = 1024;
+
 
 #endif

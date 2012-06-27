@@ -17,9 +17,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef XLOWMEM_H
 #define XLOWMEM_H
+
 
 // Modes for XLM_RUN_MODE
 #define MODE_68K 0		// 68k emulator active
@@ -62,5 +62,6 @@
 #define XLM_ETHER_WPUT 0x28d0			// Pointer to ethernet ether_wput() function
 #define XLM_ETHER_RSRV 0x28d4			// Pointer to ethernet ether_rsrv() function
 #define XLM_VIDEO_DOIO 0x28d8			// Pointer to video DoDriverIO() function
+
 
 #endif

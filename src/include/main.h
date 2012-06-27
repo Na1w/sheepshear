@@ -88,4 +88,5 @@ extern void TriggerInterrupt(void);							// Trigger SIGUSR1 interrupt in emulat
 extern void DisableInterrupt(void);							// Disable SIGUSR1 interrupt (can be nested)
 extern void EnableInterrupt(void);							// Enable SIGUSR1 interrupt (can be nested)
 
+
 #endif

@@ -17,9 +17,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef MACOS_UTIL_H
 #define MACOS_UTIL_H
+
 
 #include "cpu_emulation.h"
 #include "thunks.h"
@@ -372,5 +372,6 @@ static inline bool HasMacStarted(void)
 {
 	return ReadMacInt32(0xcfc) == FOURCC('W','L','S','C');	// Mac warm start flag
 }
+
 
 #endif
