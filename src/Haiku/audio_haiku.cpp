@@ -94,10 +94,10 @@ static status_t audio_manager(void *arg)
 
 
 static void
-playbuffer_hook(void *arg, void *buf, size_t size, const media_raw_audio_format &format)
+stream_hook(void *arg, void *buf, size_t size, const media_raw_audio_format &format)
 {
 	// Hook function for BSoundPlayer
-	gMacAudio->PlayBuffer(arg, buf, size, format);
+	gMacAudio->Stream(arg, buf, size, format);
 }
 
 
@@ -140,7 +140,7 @@ PlatformAudio::DeviceInit(void)
 	size_t block_size = (fAudioStatus.sample_size >> 3) * fAudioStatus.channels * audio_frames_per_block;
 	D(bug("Init: block size %d\n", block_size));
 	format.buffer_size = block_size;
-	the_player = new BSoundPlayer(&format, "MacOS ", playbuffer_hook, NULL, NULL);
+	the_player = new BSoundPlayer(&format, "MacOS ", stream_hook, NULL, NULL);
 	if (the_player->InitCheck() != B_NO_ERROR) {
 		printf("FATAL: Cannot initialize BSoundPlayer\n");
 		delete the_player;

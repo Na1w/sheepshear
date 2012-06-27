@@ -37,7 +37,7 @@ public:
 		bool				DeviceOpen();
 		void				DeviceClose();
 
-		void				PlayBuffer(void *arg, void *buf, size_t size,
+		void				Stream(void *arg, void *buf, size_t size,
 								const media_raw_audio_format &format);
 
 protected:

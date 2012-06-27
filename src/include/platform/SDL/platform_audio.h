@@ -28,6 +28,7 @@
 class PlatformAudio
 {
 public:
+		// Required for PlatformAudio class
 		void				DeviceInit();
 		void				DeviceShutdown();
 		void				DeviceInterrupt();
