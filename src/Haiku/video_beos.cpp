@@ -70,6 +70,7 @@ const uint32 MSG_QUIT_DISPLAY_MANAGER = 'quit';
 static thread_id dm_thread = -1;
 static sem_id dm_done_sem = -1;
 
+
 static status_t
 display_manager(void *arg)
 {
@@ -213,11 +214,10 @@ display_manager(void *arg)
 /*
  *  Open display (window or screen)
  */
-
-static void
-open_display(void)
+bool
+PlatformVideo::DeviceOpen(void)
 {
-	D(bug("entering open_display()\n"));
+	D(bug("%s\n", __func__));
 	display_type = VModes[cur_mode].viType;
 	if (display_type == DISPLAY_SCREEN) {
 		while (send_data(dm_thread, MSG_OPEN_SCREEN, NULL, 0) == B_INTERRUPTED) ;
@@ -226,18 +226,17 @@ open_display(void)
 		while (send_data(dm_thread, MSG_OPEN_WINDOW, NULL, 0) == B_INTERRUPTED) ;
 		while (acquire_sem(dm_done_sem) == B_INTERRUPTED) ;
 	}
-	D(bug("exiting open_display()\n"));
+	D(bug("exiting DeviceOpen()\n"));
 }
 
 
 /*
  *  Close display
  */
-
-static void
-close_display(void)
+void
+PlatformVideo::DeviceClose(void)
 {
-	D(bug("entering close_display()\n"));
+	D(bug("%s\n", __func__));
 	if (display_type == DISPLAY_SCREEN)  {
 		while (send_data(dm_thread, MSG_CLOSE_SCREEN, NULL, 0) == B_INTERRUPTED) ;
 		while (acquire_sem(dm_done_sem) == B_INTERRUPTED) ;
@@ -245,7 +244,7 @@ close_display(void)
 		while (send_data(dm_thread, MSG_CLOSE_WINDOW, NULL, 0) == B_INTERRUPTED) ;
 		while (acquire_sem(dm_done_sem) == B_INTERRUPTED) ;
 	}
-	D(bug("exiting close_display()\n"));
+	D(bug("exiting DeviceClose()\n"));
 }
 
 
@@ -354,7 +353,7 @@ PlatformVideo::DeviceInit(void)
 	resume_thread(dm_thread);
 
 	// Open window/screen
-	open_display();
+	DeviceOpen();
 	if (display_type == DISPLAY_SCREEN && the_screen == NULL) {
 		char str[256];
 		sprintf(str, GetString(STR_FULL_SCREEN_ERR), strerror(screen_error), screen_error);
@@ -375,7 +374,7 @@ PlatformVideo::DeviceShutdown()
 
 		// Close display
 		acquire_sem(video_lock);
-		close_display();
+		DeviceClose();
 		if (private_data != NULL) {
 			//delete private_data->gammaTable;
 			delete private_data;
@@ -403,7 +402,7 @@ PlatformVideo::DeviceQuitFullScreen(void)
 	D(bug("VideoQuitFullScreen()\n"));
 	if (display_type == DISPLAY_SCREEN) {
 		acquire_sem(video_lock);
-		close_display();
+		DeviceClose();
 		release_sem(video_lock);
 	}
 }
@@ -724,8 +723,8 @@ PlatformVideo::ModeChange(VidLocals *csSave, uint32 ParamPtr)
 
 	/* first find video mode in table */
 	for (int i=0; VModes[i].viType != DISPLAY_INVALID; i++) {
-		if ((ReadMacInt16(ParamPtr + csMode) == VModes[i].viAppleMode) &&
-		    (ReadMacInt32(ParamPtr + csData) == VModes[i].viAppleID)) {
+		if ((ReadMacInt16(ParamPtr + csMode) == VModes[i].viAppleMode)
+			&& (ReadMacInt32(ParamPtr + csData) == VModes[i].viAppleID)) {
 			csSave->saveMode = ReadMacInt16(ParamPtr + csMode);
 			csSave->saveData = ReadMacInt32(ParamPtr + csData);
 			csSave->savePage = ReadMacInt16(ParamPtr + csPage);
@@ -734,11 +733,11 @@ PlatformVideo::ModeChange(VidLocals *csSave, uint32 ParamPtr)
 			DisableInterrupt();
 
 			/* close old display */
-			close_display();
+			DeviceClose();
 
 			/* open new display */
 			cur_mode = i;
-			open_display();
+			DeviceOpen();
 
 			/* opening the screen failed? Then bail out */
 			if (display_type == DISPLAY_SCREEN && the_screen == NULL) {

@@ -33,7 +33,7 @@ public:
 		bool				DeviceInit();
 		void				DeviceShutdown();
 		bool				DeviceOpen();
-		bool				DeviceClose();
+		void				DeviceClose();
 		void				DeviceInterrupt();
 
 		void				InstallAccel();

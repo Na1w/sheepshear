@@ -40,7 +40,7 @@ public:
 							~MacAudio();
 
 			bool			Open();
-			bool			Close();
+			void			Close();
 			void			Reset();
 			void			Interrupt();
 			int32			Dispatch(uint32 params, uint32 ti);

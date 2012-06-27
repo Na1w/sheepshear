@@ -76,10 +76,10 @@ MacAudio::Open(void)
 /*
  *	Close audio device
  */
-bool
+void
 MacAudio::Close(void)
 {
-	return DeviceClose();
+	DeviceClose();
 }
 
 
