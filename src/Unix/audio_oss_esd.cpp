@@ -315,8 +315,7 @@ PlatformAudio::DeviceInit(void)
 /*
  *  Deinitialization
  */
-
-bool
+void
 PlatformAudio::DeviceClose(void)
 {
 	// Stop stream and delete semaphore
@@ -336,7 +335,6 @@ PlatformAudio::DeviceClose(void)
 	}
 
 	fAudioOpen = false;
-	return true;
 }
 
 

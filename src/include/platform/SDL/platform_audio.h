@@ -32,7 +32,7 @@ public:
 		void				DeviceShutdown();
 		void				DeviceInterrupt();
 		bool				DeviceOpen();
-		bool				DeviceClose();
+		void				DeviceClose();
 
 		void				Stream(void *arg, uint8 *stream, int stream_len);
 

@@ -35,7 +35,7 @@ public:
 		void				DeviceShutdown();
 		void				DeviceInterrupt();
 		bool				DeviceOpen();
-		bool				DeviceClose();
+		void				DeviceClose();
 
 		void				PlayBuffer(void *arg, void *buf, size_t size,
 								const media_raw_audio_format &format);

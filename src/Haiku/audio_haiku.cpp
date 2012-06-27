@@ -195,10 +195,9 @@ PlatformAudio::DeviceOpen(void)
 }
 
 
-bool
+void
 PlatformAudio::DeviceClose(void)
 {
-	return true;
 }
 
 

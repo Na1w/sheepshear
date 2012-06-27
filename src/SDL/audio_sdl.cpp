@@ -130,7 +130,7 @@ PlatformAudio::DeviceInit(void)
 /*
  *  Deinitialization
  */
-bool
+void
 PlatformAudio::DeviceClose()
 {
 	// Close audio device

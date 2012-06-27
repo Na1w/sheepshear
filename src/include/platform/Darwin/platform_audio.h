@@ -33,7 +33,7 @@ public:
 		void				DeviceShutdown();
 		void				DeviceInterrupt();
 		bool				DeviceOpen();
-		bool				DeviceClose();
+		void				DeviceClose();
 
 protected:
 		bool				GetMainMute();
