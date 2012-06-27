@@ -17,10 +17,11 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef ABOUT_WINDOW_H
 #define ABOUT_WINDOW_H
 
+
 extern void OpenAboutWindow(void);
+
 
 #endif

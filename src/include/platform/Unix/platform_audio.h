@@ -51,10 +51,12 @@ protected:
 		void				StreamEnd();
 		
 		struct audio_status fAudioStatus;
+		uint32				fAudioData;
 		bool				fAudioOpen;
 		int					fSampleRateIndex;
 		int					fSampleSizeIndex;
 		int					fChannelCountIndex;
+		int 				fFramesPerBlock;
 
 private:
 		bool				DeviceOpenDSP(void);

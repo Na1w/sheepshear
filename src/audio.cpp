@@ -41,16 +41,15 @@ vector<uint32> audio_sample_rates;
 vector<uint16> audio_sample_sizes;
 vector<uint16> audio_channel_counts;
 
-// Global variables
-int audio_frames_per_block;			// Number of audio frames per block
-uint32 audio_component_flags;		// Component feature flags
-uint32 audio_data = 0;				// Mac address of global data area
-static int open_count = 0;			// Open/close nesting count
-
 
 MacAudio::MacAudio()
+	:
+	fOpenCount(0)
 {
+	// Inhereted constructors never get called
 	fAudioOpen = false;
+	fAudioData = 0;
+	
 	DeviceInit();
 
 	Open();
@@ -89,7 +88,7 @@ MacAudio::Close(void)
 void
 MacAudio::Reset(void)
 {
-	audio_data = 0;
+	fAudioData = 0;
 }
 
 
@@ -230,7 +229,7 @@ MacAudio::GetInfo(uint32 infoPtr, uint32 selector, uint32 sourceID)
 			WriteMacInt16(infoPtr + scd_numChannels, fAudioStatus.channels);
 			WriteMacInt16(infoPtr + scd_sampleSize, fAudioStatus.sample_size);
 			WriteMacInt32(infoPtr + scd_sampleRate, fAudioStatus.sample_rate);
-			WriteMacInt32(infoPtr + scd_sampleCount, audio_frames_per_block);
+			WriteMacInt32(infoPtr + scd_sampleCount, fFramesPerBlock);
 			WriteMacInt32(infoPtr + scd_buffer, 0);
 			WriteMacInt32(infoPtr + scd_reserved, 0);
 			break;
@@ -243,7 +242,7 @@ MacAudio::GetInfo(uint32 infoPtr, uint32 selector, uint32 sourceID)
 			r.d[0] = selector;
 			r.a[1] = sourceID;
 			r.a[2] = fAudioStatus.mixer;
-			Execute68k(audio_data + adatGetInfo, &r);
+			Execute68k(fAudioData + adatGetInfo, &r);
 			D(bug("  delegated to Apple Mixer, returns %08lx\n", r.d[0]));
 			return r.d[0];
 	}
@@ -332,7 +331,7 @@ MacAudio::SetInfo(uint32 infoPtr, uint32 selector, uint32 sourceID)
 			r.d[0] = selector;
 			r.a[1] = sourceID;
 			r.a[2] = fAudioStatus.mixer;
-			Execute68k(audio_data + adatSetInfo, &r);
+			Execute68k(fAudioData + adatSetInfo, &r);
 			D(bug("  delegated to Apple Mixer, returns %08lx\n", r.d[0]));
 			return r.d[0];
 	}
@@ -356,7 +355,7 @@ MacAudio::Dispatch(uint32 params, uint32 globals)
 
 		// General component functions
 		case kComponentOpenSelect:
-			if (audio_data == 0) {
+			if (fAudioData == 0) {
 
 				// Allocate global data area
 				r.d[0] = SIZEOF_adat;
@@ -365,11 +364,11 @@ MacAudio::Dispatch(uint32 params, uint32 globals)
 				Execute68kTrap(0xa31e, &r);	// NewPtrClear()
 				if (r.a[0] == 0)
 					return memFullErr;
-				audio_data = r.a[0];
-				D(bug(" global data at %08lx\n", audio_data));
+				fAudioData = r.a[0];
+				D(bug(" global data at %08lx\n", fAudioData));
 
 				// Put in 68k routines
-				int p = audio_data + adatDelegateCall;
+				int p = fAudioData + adatDelegateCall;
 				WriteMacInt16(p, 0x598f); p += 2;	// subq.l	#4,sp
 				WriteMacInt16(p, 0x2f09); p += 2;	// move.l	a1,-(sp)
 				WriteMacInt16(p, 0x2f08); p += 2;	// move.l	a0,-(sp)
@@ -377,7 +376,7 @@ MacAudio::Dispatch(uint32 params, uint32 globals)
 				WriteMacInt16(p, 0xa82a); p += 2;	// ComponentDispatch
 				WriteMacInt16(p, 0x201f); p += 2;	// move.l	(sp)+,d0
 				WriteMacInt16(p, M68K_RTS); p += 2;	// rts
-				if (p - audio_data != adatOpenMixer)
+				if (p - fAudioData != adatOpenMixer)
 					goto adat_error;
 				WriteMacInt16(p, 0x558f); p += 2;	// subq.l	#2,sp
 				WriteMacInt16(p, 0x2f09); p += 2;	// move.l	a1,-(sp)
@@ -389,7 +388,7 @@ MacAudio::Dispatch(uint32 params, uint32 globals)
 				WriteMacInt16(p, 0x301f); p += 2;	// move.w	(sp)+,d0
 				WriteMacInt16(p, 0x48c0); p += 2;	// ext.l	d0
 				WriteMacInt16(p, M68K_RTS); p += 2;	// rts
-				if (p - audio_data != adatCloseMixer)
+				if (p - fAudioData != adatCloseMixer)
 					goto adat_error;
 				WriteMacInt16(p, 0x558f); p += 2;	// subq.l	#2,sp
 				WriteMacInt16(p, 0x2f08); p += 2;	// move.l	a0,-(sp)
@@ -399,7 +398,7 @@ MacAudio::Dispatch(uint32 params, uint32 globals)
 				WriteMacInt16(p, 0x301f); p += 2;	// move.w	(sp)+,d0
 				WriteMacInt16(p, 0x48c0); p += 2;	// ext.l	d0
 				WriteMacInt16(p, M68K_RTS); p += 2;	// rts
-				if (p - audio_data != adatGetInfo)
+				if (p - fAudioData != adatGetInfo)
 					goto adat_error;
 				WriteMacInt16(p, 0x598f); p += 2;	// subq.l	#4,sp
 				WriteMacInt16(p, 0x2f0a); p += 2;	// move.l	a2,-(sp)
@@ -412,7 +411,7 @@ MacAudio::Dispatch(uint32 params, uint32 globals)
 				WriteMacInt16(p, 0xa82a); p += 2;	// ComponentDispatch
 				WriteMacInt16(p, 0x201f); p += 2;	// move.l	(sp)+,d0
 				WriteMacInt16(p, M68K_RTS); p += 2;	// rts
-				if (p - audio_data != adatSetInfo)
+				if (p - fAudioData != adatSetInfo)
 					goto adat_error;
 				WriteMacInt16(p, 0x598f); p += 2;	// subq.l	#4,sp
 				WriteMacInt16(p, 0x2f0a); p += 2;	// move.l	a2,-(sp)
@@ -425,7 +424,7 @@ MacAudio::Dispatch(uint32 params, uint32 globals)
 				WriteMacInt16(p, 0xa82a); p += 2;	// ComponentDispatch
 				WriteMacInt16(p, 0x201f); p += 2;	// move.l	(sp)+,d0
 				WriteMacInt16(p, M68K_RTS); p += 2;	// rts
-				if (p - audio_data != adatPlaySourceBuffer)
+				if (p - fAudioData != adatPlaySourceBuffer)
 					goto adat_error;
 				WriteMacInt16(p, 0x598f); p += 2;	// subq.l	#4,sp
 				WriteMacInt16(p, 0x2f0a); p += 2;	// move.l	a2,-(sp)
@@ -438,7 +437,7 @@ MacAudio::Dispatch(uint32 params, uint32 globals)
 				WriteMacInt16(p, 0xa82a); p += 2;	// ComponentDispatch
 				WriteMacInt16(p, 0x201f); p += 2;	// move.l	(sp)+,d0
 				WriteMacInt16(p, M68K_RTS); p += 2;	// rts
-				if (p - audio_data != adatGetSourceData)
+				if (p - fAudioData != adatGetSourceData)
 					goto adat_error;
 				WriteMacInt16(p, 0x598f); p += 2;	// subq.l	#4,sp
 				WriteMacInt16(p, 0x2f09); p += 2;	// move.l	a1,-(sp)
@@ -449,7 +448,7 @@ MacAudio::Dispatch(uint32 params, uint32 globals)
 				WriteMacInt16(p, 0xa82a); p += 2;	// ComponentDispatch
 				WriteMacInt16(p, 0x201f); p += 2;	// move.l	(sp)+,d0
 				WriteMacInt16(p, M68K_RTS); p += 2;	// rts
-				if (p - audio_data != adatStartSource)
+				if (p - fAudioData != adatStartSource)
 					goto adat_error;
 				WriteMacInt16(p, 0x598f); p += 2;	// subq.l	#4,sp
 				WriteMacInt16(p, 0x2f09); p += 2;	// move.l	a1,-(sp)
@@ -461,12 +460,12 @@ MacAudio::Dispatch(uint32 params, uint32 globals)
 				WriteMacInt16(p, 0xa82a); p += 2;	// ComponentDispatch
 				WriteMacInt16(p, 0x201f); p += 2;	// move.l	(sp)+,d0
 				WriteMacInt16(p, M68K_RTS); p += 2;	// rts
-				if (p - audio_data != adatData)
+				if (p - fAudioData != adatData)
 					goto adat_error;
 			}
-			if (open_count == 0)
+			if (fOpenCount == 0)
 				StreamStart();
-			open_count++;
+			fOpenCount++;
 			return noErr;
 
 adat_error:	printf("FATAL: audio component data block initialization error\n");
@@ -474,19 +473,19 @@ adat_error:	printf("FATAL: audio component data block initialization error\n");
 			return openErr;
 
 		case kComponentCloseSelect:
-			open_count--;
-			if (open_count == 0) {
-				if (audio_data) {
+			fOpenCount--;
+			if (fOpenCount == 0) {
+				if (fAudioData) {
 					if (fAudioStatus.mixer) {
 						// Close Apple Mixer
 						r.a[0] = fAudioStatus.mixer;
-						Execute68k(audio_data + adatCloseMixer, &r);
+						Execute68k(fAudioData + adatCloseMixer, &r);
 						fAudioStatus.mixer = 0;
 						return r.d[0];
 					}
-					r.a[0] = audio_data;
+					r.a[0] = fAudioData;
 					Execute68kTrap(0xa01f, &r);	// DisposePtr()
-					audio_data = 0;
+					fAudioData = 0;
 				}
 				fAudioStatus.num_sources = 0;
 				StreamEnd();
@@ -527,22 +526,22 @@ adat_error:	printf("FATAL: audio component data block initialization error\n");
 				return noErr;
 
 			// Init sound component data
-			WriteMacInt32(audio_data + adatData + scd_flags, 0);
-			WriteMacInt32(audio_data + adatData + scd_format, fAudioStatus.sample_size == 16 ? FOURCC('t','w','o','s') : FOURCC('r','a','w',' '));
-			WriteMacInt16(audio_data + adatData + scd_numChannels, fAudioStatus.channels);
-			WriteMacInt16(audio_data + adatData + scd_sampleSize, fAudioStatus.sample_size);
-			WriteMacInt32(audio_data + adatData + scd_sampleRate, fAudioStatus.sample_rate);
-			WriteMacInt32(audio_data + adatData + scd_sampleCount, audio_frames_per_block);
-			WriteMacInt32(audio_data + adatData + scd_buffer, 0);
-			WriteMacInt32(audio_data + adatData + scd_reserved, 0);
-			WriteMacInt32(audio_data + adatStreamInfo, 0);
+			WriteMacInt32(fAudioData + adatData + scd_flags, 0);
+			WriteMacInt32(fAudioData + adatData + scd_format, fAudioStatus.sample_size == 16 ? FOURCC('t','w','o','s') : FOURCC('r','a','w',' '));
+			WriteMacInt16(fAudioData + adatData + scd_numChannels, fAudioStatus.channels);
+			WriteMacInt16(fAudioData + adatData + scd_sampleSize, fAudioStatus.sample_size);
+			WriteMacInt32(fAudioData + adatData + scd_sampleRate, fAudioStatus.sample_rate);
+			WriteMacInt32(fAudioData + adatData + scd_sampleCount, fFramesPerBlock);
+			WriteMacInt32(fAudioData + adatData + scd_buffer, 0);
+			WriteMacInt32(fAudioData + adatData + scd_reserved, 0);
+			WriteMacInt32(fAudioData + adatStreamInfo, 0);
 
 			// Open Apple Mixer
-			r.a[0] = audio_data + adatMixer;
+			r.a[0] = fAudioData + adatMixer;
 			r.d[0] = 0;
-			r.a[1] = audio_data + adatData;
-			Execute68k(audio_data + adatOpenMixer, &r);
-			fAudioStatus.mixer = ReadMacInt32(audio_data + adatMixer);
+			r.a[1] = fAudioData + adatData;
+			Execute68k(fAudioData + adatOpenMixer, &r);
+			fAudioStatus.mixer = ReadMacInt32(fAudioData + adatMixer);
 			D(bug(" OpenMixer() returns %08lx, mixer %08lx\n", r.d[0], fAudioStatus.mixer));
 			return r.d[0];
 
@@ -574,7 +573,7 @@ adat_error:	printf("FATAL: audio component data block initialization error\n");
 			r.d[0] = ReadMacInt16(p + 4);
 			r.a[0] = ReadMacInt32(p);
 			r.a[1] = fAudioStatus.mixer;
-			Execute68k(audio_data + adatStartSource, &r);
+			Execute68k(fAudioData + adatStartSource, &r);
 			D(bug(" returns %08lx\n", r.d[0]));
 			return noErr;
 
@@ -588,7 +587,7 @@ delegate:	// Delegate call to Apple Mixer
 			D(bug(" delegating call to Apple Mixer\n"));
 			r.a[0] = fAudioStatus.mixer;
 			r.a[1] = params;
-			Execute68k(audio_data + adatDelegateCall, &r);
+			Execute68k(fAudioData + adatDelegateCall, &r);
 			D(bug(" returns %08lx\n", r.d[0]));
 			return r.d[0];
 
@@ -598,7 +597,7 @@ delegate:	// Delegate call to Apple Mixer
 			r.a[0] = ReadMacInt32(p + 4);
 			r.a[1] = ReadMacInt32(p + 8);
 			r.a[2] = fAudioStatus.mixer;
-			Execute68k(audio_data + adatPlaySourceBuffer, &r);
+			Execute68k(fAudioData + adatPlaySourceBuffer, &r);
 			D(bug(" returns %08lx\n", r.d[0]));
 			return r.d[0];
 

@@ -145,8 +145,8 @@ PlatformAudio::DeviceOpenDSP(void)
 	ioctl(audio_fd, SNDCTL_DSP_SPEED, &rate);
 
 	// Get sound buffer size
-	ioctl(audio_fd, SNDCTL_DSP_GETBLKSIZE, &audio_frames_per_block);
-	D(bug("DSP_GETBLKSIZE %d\n", audio_frames_per_block));
+	ioctl(audio_fd, SNDCTL_DSP_GETBLKSIZE, &fFramesPerBlock);
+	D(bug("DSP_GETBLKSIZE %d\n", fFramesPerBlock));
 	return true;
 }
 
@@ -215,7 +215,7 @@ PlatformAudio::DeviceOpenESD(void)
 	}
 
 	// Sound buffer size = 4096 frames
-	audio_frames_per_block = 4096;
+	fFramesPerBlock = 4096;
 	return true;
 #else
 	// ESD is not enabled, shut up the compiler
@@ -266,7 +266,7 @@ PlatformAudio::DeviceOpen(void)
 	// Device opened, set fAudioStatus
 	sound_buffer_size = (audio_sample_sizes[fSampleSizeIndex] >> 3)
 		* audio_channel_counts[fChannelCountIndex]
-		* audio_frames_per_block;
+		* fFramesPerBlock;
 
 	fAudioStatus.sample_rate = audio_sample_rates[fSampleRateIndex];
 	fAudioStatus.sample_size = audio_sample_sizes[fSampleSizeIndex];
@@ -293,7 +293,6 @@ PlatformAudio::DeviceInit(void)
 	fAudioStatus.channels = 2;
 	fAudioStatus.mixer = 0;
 	fAudioStatus.num_sources = 0;
-	audio_component_flags = cmpWantsRegisterMessage | kStereoOut | k16BitOut;
 
 	// Sound disabled in prefs? Then do nothing
 	if (PrefsFindBool("nosound"))
@@ -403,7 +402,7 @@ PlatformAudio::Stream(void *arg)
 
 			// Get size of audio data
 			uint32 apple_stream_info
-				= ReadMacInt32(audio_data + adatStreamInfo);
+				= ReadMacInt32(fAudioData + adatStreamInfo);
 			if (apple_stream_info) {
 				int work_size = ReadMacInt32(apple_stream_info
 					+ scd_sampleCount) * (fAudioStatus.sample_size >> 3)
@@ -463,12 +462,12 @@ PlatformAudio::DeviceInterrupt(void)
 	// Get data from apple mixer
 	if (fAudioStatus.mixer) {
 		M68kRegisters r;
-		r.a[0] = audio_data + adatStreamInfo;
+		r.a[0] = fAudioData + adatStreamInfo;
 		r.a[1] = fAudioStatus.mixer;
-		Execute68k(audio_data + adatGetSourceData, &r);
+		Execute68k(fAudioData + adatGetSourceData, &r);
 		D(bug(" GetSourceData() returns %08lx\n", r.d[0]));
 	} else
-		WriteMacInt32(audio_data + adatStreamInfo, 0);
+		WriteMacInt32(fAudioData + adatStreamInfo, 0);
 
 	// Signal stream function
 	sem_post(&audio_irq_done_sem);

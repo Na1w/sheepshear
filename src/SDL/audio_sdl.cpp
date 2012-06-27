@@ -99,7 +99,7 @@ PlatformAudio::DeviceOpen(void)
 	SDL_PauseAudio(0);
 
 	// Sound buffer size = 4096 frames
-	audio_frames_per_block = audio_spec.samples;
+	fFramesPerBlock = audio_spec.samples;
 
 	// Everything went fine
 	fAudioOpen = true;
@@ -116,7 +116,6 @@ PlatformAudio::DeviceInit(void)
 	fAudioStatus.channels = 2;
 	fAudioStatus.mixer = 0;
 	fAudioStatus.num_sources = 0;
-	audio_component_flags = cmpWantsRegisterMessage | kStereoOut | k16BitOut;
 
 	// Sound disabled in prefs? Then do nothing
 	if (PrefsFindBool("nosound"))
@@ -187,7 +186,7 @@ PlatformAudio::Stream(void *arg, uint8 *stream, int stream_len)
 		D(bug("stream: ack received\n"));
 
 		// Get size of audio data
-		uint32 apple_stream_info = ReadMacInt32(audio_data + adatStreamInfo);
+		uint32 apple_stream_info = ReadMacInt32(fAudioData + adatStreamInfo);
 		if (apple_stream_info) {
 			int work_size = ReadMacInt32(apple_stream_info + scd_sampleCount)
 				* (fAudioStatus.sample_size >> 3) * fAudioStatus.channels;
@@ -230,12 +229,12 @@ PlatformAudio::DeviceInterrupt(void)
 	// Get data from apple mixer
 	if (fAudioStatus.mixer) {
 		M68kRegisters r;
-		r.a[0] = audio_data + adatStreamInfo;
+		r.a[0] = fAudioData + adatStreamInfo;
 		r.a[1] = fAudioStatus.mixer;
-		Execute68k(audio_data + adatGetSourceData, &r);
+		Execute68k(fAudioData + adatGetSourceData, &r);
 		D(bug(" GetSourceData() returns %08lx\n", r.d[0]));
 	} else
-		WriteMacInt32(audio_data + adatStreamInfo, 0);
+		WriteMacInt32(fAudioData + adatStreamInfo, 0);
 
 	// Signal stream function
 	SDL_SemPost(audio_irq_done_sem);

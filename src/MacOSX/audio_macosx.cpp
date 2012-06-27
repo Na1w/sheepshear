@@ -67,7 +67,7 @@ PlatformAudio::DeviceOpen()
 	soundOutput->start(fAudioStatus.sample_size, fAudioStatus.channels,
 		fAudioStatus.sample_rate >> 16);
 	soundOutput->setCallback(audioInt);
-	audio_frames_per_block = soundOutput->bufferSizeFrames();
+	fFramesPerBlock = soundOutput->bufferSizeFrames();
 
 	fAudioOpen = true;
 	return true;
@@ -98,8 +98,6 @@ PlatformAudio::DeviceInit(void)
 
 	fAudioStatus.mixer = 0;
 	fAudioStatus.num_sources = 0;
-	audio_component_flags = cmpWantsRegisterMessage | kStereoOut | k16BitOut;
-	audio_component_flags = 0;
 }
 
 

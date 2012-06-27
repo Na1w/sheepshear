@@ -57,16 +57,14 @@ public:
 private:
 			int32			GetInfo(uint32 infoPtr, uint32 selector, uint32 sourceID);
 			int32			SetInfo(uint32 infoPtr, uint32 selector, uint32 sourceID);
+
+			int				fOpenCount; // Open/close nesting count
 };
 
-extern int audio_frames_per_block;		// Number of audio frames per block
-extern uint32 audio_component_flags;	// Component feature flags
 
 extern vector<uint32> audio_sample_rates;	// Vector of supported sample rates (16.16 fixed point)
 extern vector<uint16> audio_sample_sizes;	// Vector of supported sample sizes
 extern vector<uint16> audio_channel_counts;	// Array of supported channels counts
-
-extern uint32 audio_data;		// Mac address of global data area
 
 
 #endif

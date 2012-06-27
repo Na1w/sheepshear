@@ -53,6 +53,7 @@ protected:
 		int					fSampleRateIndex;
 		int					fSampleSizeIndex;
 		int					fChannelCountIndex;
+		int 				fFramesPerBlock;
 };
 
 

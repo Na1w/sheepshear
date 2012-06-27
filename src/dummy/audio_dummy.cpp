@@ -40,7 +40,6 @@ PlatformAudio::DeviceInit(void)
 	fAudioStatus.channels = 2;
 	fAudioStatus.mixer = 0;
 	fAudioStatus.num_sources = 0;
-	audio_component_flags = cmpWantsRegisterMessage | kStereoOut | k16BitOut;
 
 	// Only one sample format is supported
 	audio_sample_rates.push_back(44100 << 16);
