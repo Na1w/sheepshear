@@ -201,8 +201,10 @@ static bool check_rom_patch_space(uint32 base, uint32 size)
 	size = (size + 3) & -4;
 	for (int i = 0; i < size; i += 4) {
 		uint32 x = ntohl(*(uint32 *)(ROMBaseHost + base + i));
-		if (x != 0x6b636b63 && x != 0)
+		if (x != 0x6b636b63 && x != 0) {
+			bug("%s: requested ROM patch space non-existant!\n", __func__);
 			return false;
+		}
 	}
 	return true;
 }
@@ -585,18 +587,34 @@ bool PatchROM(void)
 	// Detect ROM type
 	if (!memcmp(ROMBaseHost + 0x30d064, "Boot TNT", 8))
 		ROMType = ROMTYPE_TNT;
+	else if (!memcmp(ROMBaseHost + 0x30d064, "Boot Pip", 8))
+		ROMType = ROMTYPE_PIP;
+	else if (!memcmp(ROMBaseHost + 0x30d064, "Boot Cordyceps", 14))
+		ROMType = ROMTYPE_CORDYCEPS;
 	else if (!memcmp(ROMBaseHost + 0x30d064, "Boot Alchemy", 12))
 		ROMType = ROMTYPE_ALCHEMY;
 	else if (!memcmp(ROMBaseHost + 0x30d064, "Boot Zanzibar", 13))
 		ROMType = ROMTYPE_ZANZIBAR;
+	else if (!memcmp(ROMBaseHost + 0x30d064, "Boot PBX", 8))
+		ROMType = ROMTYPE_PBX;
 	else if (!memcmp(ROMBaseHost + 0x30d064, "Boot Gazelle", 12))
 		ROMType = ROMTYPE_GAZELLE;
 	else if (!memcmp(ROMBaseHost + 0x30d064, "Boot Gossamer", 13))
 		ROMType = ROMTYPE_GOSSAMER;
+	else if (!memcmp(ROMBaseHost + 0x30d064, "Boot GRX", 8))
+		ROMType = ROMTYPE_GRX;
 	else if (!memcmp(ROMBaseHost + 0x30d064, "NewWorld", 8))
 		ROMType = ROMTYPE_NEWWORLD;
 	else
 		return false;
+
+	switch (ROMType) {
+		case ROMTYPE_PIP:
+		case ROMTYPE_CORDYCEPS:
+		case ROMTYPE_GRX:
+		case ROMTYPE_PBX:
+			bug("%s: Warning, untested Macintosh ROM detected!\n", __func__);
+	}
 
 	// Check that other ROM addresses point to really free regions
 	if (!check_rom_patch_space(CHECK_LOAD_PATCH_SPACE, 0x40))
@@ -1626,8 +1644,10 @@ static bool patch_68k(void)
 
 	// Remove 68k RESET instruction
 	static const uint8 reset_dat[] = { 0x4e, 0x70 };
-	if (!find_rom_data(0xc8, 0x120, reset_dat, sizeof(reset_dat), &base))
+	if (!find_rom_data(0xc8, 0x120, reset_dat, sizeof(reset_dat), &base)) {
+		bug("%s: Couldn't find 68k reset instruction!\n", __func__);
 		return false;
+	}
 	D(bug("reset %08lx\n", base));
 	wp = (uint16 *)(ROMBaseHost + base);
 	*wp = htons(M68K_NOP);
@@ -1639,6 +1659,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0xe000, 0x15000,
 		powermac_id_dat, sizeof(powermac_id_dat), &base)) {
+		bug("%s: Couldn't find powermac_id in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("powermac_id %08lx\n", base));
@@ -1657,6 +1678,7 @@ static bool patch_68k(void)
 		static const uint8 univ_info_dat[] = { 0x3f, 0xff, 0x04, 0x00 };
 		if (!find_rom_data(0x14000, 0x18000,
 			univ_info_dat, sizeof(univ_info_dat), &base)) {
+			bug("%s: Couldn't find univ_info in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("universal_info %08lx\n", base));
@@ -1718,6 +1740,7 @@ static bool patch_68k(void)
 		lp[48] = htonl(0xf8000000);
 	}
 
+#if 0
 	// Don't initialize VIA (via Universal)
 	static const uint8 via_init_dat[] = {
 		0x08, 0x00, 0x00, 0x02,
@@ -1726,6 +1749,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0xe000, 0x15000,
 		via_init_dat, sizeof(via_init_dat), &base)) {
+		bug("%s: Couldn't find via_init in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("via_init %08lx\n", base));
@@ -1738,6 +1762,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0xa000, 0x10000,
 		via_init2_dat, sizeof(via_init2_dat), &base)) {
+		bug("%s: Couldn't find via_init2 in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("via_init2 %08lx\n", base));
@@ -1750,17 +1775,20 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0xa000, 0x10000,
 		via_init3_dat, sizeof(via_init3_dat), &base)) {
+		bug("%s: Couldn't find via_init3 in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("via_init3 %08lx\n", base));
 	wp = (uint16 *)(ROMBaseHost + base);
 	*wp = htons(0x4ed6);			// jmp	(a6)
+#endif
 
 	// Don't RunDiags, get BootGlobs pointer directly
 	if (ROMType == ROMTYPE_NEWWORLD) {
 		static const uint8 run_diags_dat[] = { 0x60, 0xff, 0x00, 0x0c };
 		if (!find_rom_data(0x110, 0x128, run_diags_dat,
 			sizeof(run_diags_dat), &base)) {
+			bug("%s: Couldn't find run_diags in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("run_diags %08lx\n", base));
@@ -1768,10 +1796,11 @@ static bool patch_68k(void)
 		*wp++ = htons(0x4df9);			// lea	xxx,a6
 		*wp++ = htons((RAMBase + RAMSize - 0x1c) >> 16);
 		*wp = htons((RAMBase + RAMSize - 0x1c) & 0xffff);
-	} else {
+	} else if (ROMType != ROMTYPE_PIP) {
 		static const uint8 run_diags_dat[] = { 0x74, 0x00, 0x2f, 0x0e };
 		if (!find_rom_data(0xd0, 0xf0, run_diags_dat,
 			sizeof(run_diags_dat), &base)) {
+			bug("%s: Couldn't find run_diags in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("run_diags %08lx\n", base));
@@ -1789,6 +1818,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x7000, 0xc000,
 		nvram1_dat, sizeof(nvram1_dat), &base)) {
+		bug("%s: Couldn't find nvram1 in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("nvram1 %08lx\n", base));
@@ -1803,6 +1833,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(0xa000, 0xd000,
 			nvram2_dat, sizeof(nvram2_dat), &base)) {
+			bug("%s: Couldn't find nvram2 in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("nvram2 %08lx\n", base));
@@ -1816,6 +1847,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(0xa000, 0xd000,
 			nvram3_dat, sizeof(nvram3_dat), &base)) {
+			bug("%s: Couldn't find nvram3 in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("nvram3 %08lx\n", base));
@@ -1830,6 +1862,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(0xa000, 0xd000,
 			nvram4_dat, sizeof(nvram4_dat), &base)) {
+			bug("%s: Couldn't find nvram4 in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("nvram4 %08lx\n", base));
@@ -1851,6 +1884,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(0xa000, 0xd000,
 			nvram5_dat, sizeof(nvram5_dat), &base)) {
+			bug("%s: Couldn't find nvram5 in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("nvram5 %08lx\n", base));
@@ -1864,6 +1898,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(0x9000, 0xb000,
 			nvram6_dat, sizeof(nvram6_dat), &base)) {
+			bug("%s: Couldn't find nvram6 in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("nvram6 %08lx\n", base));
@@ -1892,6 +1927,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(0x7000, 0xb000,
 			nvram2_dat, sizeof(nvram2_dat), &base)) {
+			bug("%s: Couldn't find nvram2 in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("nvram2 %08lx\n", base));
@@ -1904,6 +1940,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(0x7000, 0xb000,
 			nvram3_dat, sizeof(nvram3_dat), &base)) {
+			bug("%s: Couldn't find nvram3 in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("nvram3 %08lx\n", base));
@@ -1954,8 +1991,10 @@ static bool patch_68k(void)
 		0x2c, 0x6c, 0xff, 0xec,
 		0x2a, 0x4c, 0xdb, 0xec, 0xff, 0xf4
 	};
-	if (!find_rom_data(0x120, 0x180, mem_top_dat, sizeof(mem_top_dat), &base))
+	if (!find_rom_data(0x120, 0x180, mem_top_dat, sizeof(mem_top_dat), &base)) {
+		bug("%s: Couldn't find mem_top in ROM!\n", __func__);
 		return false;
+	}
 	D(bug("mem_top %08lx\n", base));
 	wp = (uint16 *)(ROMBaseHost + base);
 	*wp++ = htons(M68K_EMUL_OP_FIX_MEMTOP);
@@ -1968,6 +2007,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x180, 0x1f0,
 		scc_init_caller_dat, sizeof(scc_init_caller_dat), &base)) {
+		bug("%s: Couldn't find scc_init_caller in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("scc_init_caller %08lx\n", base + 12));
@@ -1979,6 +2019,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(loc, loc + 0x80,
 		scc_init_dat, sizeof(scc_init_dat), &base)) {
+		bug("%s: Couldn't find scc_init in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("scc_init %08lx\n", base));
@@ -1990,6 +2031,7 @@ static bool patch_68k(void)
 	static const uint8 ext_cache_dat[] = { 0x4e, 0x7b, 0x00, 0x02 };
 	if (!find_rom_data(0x1d0, 0x230,
 		ext_cache_dat, sizeof(ext_cache_dat), &base)) {
+		bug("%s: Couldn't find ext_cache in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("ext_cache %08lx\n", base));
@@ -2000,28 +2042,32 @@ static bool patch_68k(void)
 	wp = (uint16 *)(ROMBaseHost + loc + base + 12);
 	*wp = htons(M68K_RTS);
 
-	// Fake CPU speed test (SetupTimeK)
-	static const uint8 timek_dat[] = {
-		0x0c, 0x38, 0x00, 0x04,
-		0x01, 0x2f, 0x6d, 0x3c
-	};
-	if (!find_rom_data(0x400, 0x500, timek_dat, sizeof(timek_dat), &base))
-		return false;
-	D(bug("timek %08lx\n", base));
-	wp = (uint16 *)(ROMBaseHost + base);
-	*wp++ = htons(0x31fc);			// move.w	#xxx,TimeDBRA
-	*wp++ = htons(100);
-	*wp++ = htons(0x0d00);
-	*wp++ = htons(0x31fc);			// move.w	#xxx,TimeSCCDBRA
-	*wp++ = htons(100);
-	*wp++ = htons(0x0d02);
-	*wp++ = htons(0x31fc);			// move.w	#xxx,TimeSCSIDBRA
-	*wp++ = htons(100);
-	*wp++ = htons(0x0b24);
-	*wp++ = htons(0x31fc);			// move.w	#xxx,TimeRAMDBRA
-	*wp++ = htons(100);
-	*wp++ = htons(0x0cea);
-	*wp = htons(M68K_RTS);
+	if (ROMType != ROMTYPE_PIP) {
+		// Fake CPU speed test (SetupTimeK)
+		static const uint8 timek_dat[] = {
+			0x0c, 0x38, 0x00, 0x04,
+			0x01, 0x2f, 0x6d, 0x3c
+		};
+		if (!find_rom_data(0x400, 0x500, timek_dat, sizeof(timek_dat), &base)) {
+			bug("%s: Couldn't find timek in ROM!\n", __func__);
+			return false;
+		}
+		D(bug("timek %08lx\n", base));
+		wp = (uint16 *)(ROMBaseHost + base);
+		*wp++ = htons(0x31fc);			// move.w	#xxx,TimeDBRA
+		*wp++ = htons(100);
+		*wp++ = htons(0x0d00);
+		*wp++ = htons(0x31fc);			// move.w	#xxx,TimeSCCDBRA
+		*wp++ = htons(100);
+		*wp++ = htons(0x0d02);
+		*wp++ = htons(0x31fc);			// move.w	#xxx,TimeSCSIDBRA
+		*wp++ = htons(100);
+		*wp++ = htons(0x0b24);
+		*wp++ = htons(0x31fc);			// move.w	#xxx,TimeRAMDBRA
+		*wp++ = htons(100);
+		*wp++ = htons(0x0cea);
+		*wp = htons(M68K_RTS);
+	}
 
 	// Relocate jump tables ($2000..)
 	static const uint8 jump_tab_dat[] = {
@@ -2030,6 +2076,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x3000, 0x6000,
 		jump_tab_dat, sizeof(jump_tab_dat), &base)) {
+		bug("%s: Couldn't find jump_table in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("jump_tab %08lx\n", base));
@@ -2053,6 +2100,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x600, 0x900,
 		sys_zone_dat, sizeof(sys_zone_dat), &base)) {
+		bug("%s: Couldn't find sys_zone in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("sys_zone %08lx\n", base));
@@ -2067,6 +2115,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x580, 0x800,
 		boot_stack_dat, sizeof(boot_stack_dat), &base)) {
+		bug("%s: Couldn't find boot_stack in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("boot_stack %08lx\n", base));
@@ -2084,6 +2133,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0xb000, 0x12000,
 		page_size_dat, sizeof(page_size_dat), &base)) {
+		bug("%s: Couldn't find page_size in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("page_size %08lx\n", base));
@@ -2102,6 +2152,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x50000, 0x70000,
 		page_size2_dat, sizeof(page_size2_dat), &base)) {
+		bug("%s: Couldn't find page_size2 in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("page_size2 %08lx\n", base));
@@ -2155,6 +2206,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(0x13000, 0x20000,
 			gc_mask_dat, sizeof(gc_mask_dat), &base)) {
+			bug("%s: Couldn't find gc_mask in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("gc_mask %08lx\n", base));
@@ -2177,6 +2229,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(0x13000, 0x20000,
 			gc_mask2_dat, sizeof(gc_mask2_dat), &base)) {
+			bug("%s: Couldn't find gc_mask2 in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("gc_mask2 %08lx\n", base));
@@ -2214,6 +2267,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0xa000, 0x12000,
 		cuda_init_dat, sizeof(cuda_init_dat), &base)) {
+		bug("%s: Couldn't find cuda_init in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("cuda_init %08lx\n", base));
@@ -2233,6 +2287,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x6000, 0xa000,
 		cpu_speed_dat, sizeof(cpu_speed_dat), &base)) {
+		bug("%s: Couldn't find cpu_speed in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("cpu_speed %08lx\n", base));
@@ -2259,6 +2314,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x30000, 0x40000,
 		time_via_dat, sizeof(time_via_dat), &base)) {
+		bug("%s: Couldn't find time_via in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("time_via %08lx\n", base));
@@ -2275,6 +2331,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x48000, 0x58000,
 		open_firmware_dat, sizeof(open_firmware_dat), &base)) {
+		bug("%s: Couldn't find open_firmware in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("open_firmware %08lx\n", base));
@@ -2295,6 +2352,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x13000, 0x20000,
 		ext_cache2_dat, sizeof(ext_cache2_dat), &base)) {
+		bug("%s: Couldn't find ext_cache2 in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("ext_cache2 %08lx\n", base));
@@ -2308,6 +2366,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(0x2a0, 0x320,
 			tm_task_dat, sizeof(tm_task_dat), &base)) {
+			bug("%s: Couldn't find tm_task in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("tm_task %08lx\n", base));
@@ -2324,6 +2383,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(0x280, 0x300,
 			tm_task_dat, sizeof(tm_task_dat), &base)) {
+			bug("%s: Couldn't find tm_task in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("tm_task %08lx\n", base));
@@ -2334,7 +2394,8 @@ static bool patch_68k(void)
 	}
 
 	// Don't read PVR from 0x5fffef80 in DriverServicesLib (via 0x316)
-	if (ROMType != ROMTYPE_NEWWORLD && ROMType != ROMTYPE_GOSSAMER) {
+	if (ROMType != ROMTYPE_NEWWORLD
+		&& ROMType != ROMTYPE_GOSSAMER) {
 		uint32 dsl_offset
 			= find_rom_resource(FOURCC('n', 'l', 'i', 'b'), -16401);
 		if (ROMType == ROMTYPE_ZANZIBAR) {
@@ -2347,6 +2408,7 @@ static bool patch_68k(void)
 			};
 			if (!find_rom_data(dsl_offset, dsl_offset + 0x6000,
 				dsl_pvr_dat, sizeof(dsl_pvr_dat), &base)) {
+				bug("%s: Couldn't find dsl_pvr in ROM!\n", __func__);
 				return false;
 			}
 		} else {
@@ -2359,6 +2421,7 @@ static bool patch_68k(void)
 			};
 			if (!find_rom_data(dsl_offset, dsl_offset + 0x6000,
 				dsl_pvr_dat, sizeof(dsl_pvr_dat), &base)) {
+				bug("%s: Couldn't find dsl_pvr in ROM!\n", __func__);
 				return false;
 			}
 		}
@@ -2375,6 +2438,7 @@ static bool patch_68k(void)
 			};
 			if (!find_rom_data(dsl_offset, dsl_offset + 0x6000,
 				dsl_bus_dat, sizeof(dsl_bus_dat), &base)) {
+				bug("%s: Couldn't find dsl_bus in ROM!\n", __func__);
 				return false;
 			}
 			D(bug("dsl_bus %08lx\n", base));
@@ -2388,6 +2452,7 @@ static bool patch_68k(void)
 			};
 			if (!find_rom_data(dsl_offset, dsl_offset + 0x6000,
 				dsl_bus_dat, sizeof(dsl_bus_dat), &base)) {
+				bug("%s: Couldn't find dsl_bus in ROM!\n", __func__);
 				return false;
 			}
 			D(bug("dsl_bus %08lx\n", base));
@@ -2413,6 +2478,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(hpchk_offset, hpchk_offset + 0x3000,
 			hpchk_dat, sizeof(hpchk_dat), &base)) {
+			bug("%s: Couldn't find hpchk in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("macpgm %08lx\n", base));
@@ -2422,8 +2488,11 @@ static bool patch_68k(void)
 
 	// Patch Name Registry
 	static const uint8 name_reg_dat[] = { 0x70, 0xff, 0xab, 0xeb };
-	if (!find_rom_data(0x300, 0x380, name_reg_dat, sizeof(name_reg_dat), &base))
+	if (!find_rom_data(0x300, 0x380,
+		name_reg_dat, sizeof(name_reg_dat), &base)) {
+		bug("%s: Couldn't find name_reg in ROM!\n", __func__);
 		return false;
+	}
 	D(bug("name_reg %08lx\n", base));
 	wp = (uint16 *)(ROMBaseHost + base);
 	*wp = htons(M68K_EMUL_OP_NAME_REGISTRY);
@@ -2446,6 +2515,7 @@ static bool patch_68k(void)
 		scsi_mgr_a_dat, sizeof(scsi_mgr_a_dat), &base)) {
 		if (!find_rom_data(0x1c000, 0x28000,
 			scsi_mgr_b_dat, sizeof(scsi_mgr_b_dat), &base)) {
+			bug("%s: Couldn't find scsi_mgr_b in ROM!\n", __func__);
 			return false;
 		}
 	}
@@ -2531,6 +2601,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x31000, 0x3d000,
 		adb_init_dat, sizeof(adb_init_dat), &base)) {
+		bug("%s: Couldn't find adb_init in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("adb_init %08lx\n", base));
@@ -2543,6 +2614,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x78000, 0x8c000,
 		init_res_dat, sizeof(init_res_dat), &base)) {
+		bug("%s: Couldn't find init_res in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("init_res %08lx\n", base));
@@ -2553,6 +2625,7 @@ static bool patch_68k(void)
 	static const uint8 check_load_dat[] = {0x20, 0x78, 0x07, 0xf0, 0x4e, 0xd0};
 	if (!find_rom_data(0x78000, 0x8c000,
 		check_load_dat, sizeof(check_load_dat), &base)) {
+		bug("%s: Couldn't find check_load in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("check_load %08lx\n", base));
@@ -2574,8 +2647,10 @@ static bool patch_68k(void)
 		sony_offset = find_rom_resource(FOURCC('D','R','V','R'), 4, true);		// First DRVR 4 is .MFMFloppy
 	if (sony_offset == 0) {
 		sony_offset = find_rom_resource(FOURCC('n','d','r','v'), -20196);		// NewWorld 1.6 has "PCFloppy" ndrv
-		if (sony_offset == 0)
+		if (sony_offset == 0) {
+			bug("%s: Couldn't find sony_offset in ROM!\n", __func__);
 			return false;
+		}
 		lp = (uint32 *)(ROMBaseHost + rsrc_ptr + 8);
 		*lp = htonl(FOURCC('D','R','V','R'));
 		wp = (uint16 *)(ROMBaseHost + rsrc_ptr + 12);
@@ -2611,6 +2686,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0xb00, 0xd00,
 		drvr_install_dat, sizeof(drvr_install_dat), &base)) {
+		bug("%s: Couldn't find drvr_install in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("drvr_install %08lx\n", base));
@@ -2668,8 +2744,10 @@ static bool patch_68k(void)
 		0x2f, 0x30, 0x81, 0xe2,
 		0x20, 0x10, 0x00, 0x18
 	};
-	if (!find_rom_data(0xa000, 0x10000, egret_dat, sizeof(egret_dat), &base))
+	if (!find_rom_data(0xa000, 0x10000, egret_dat, sizeof(egret_dat), &base)) {
+		bug("%s: Couldn't find egret in ROM!\n", __func__);
 		return false;
+	}
 	D(bug("egret %08lx\n", base));
 	wp = (uint16 *)(ROMBaseHost + base);
 	*wp++ = htons(0x7000);
@@ -2683,6 +2761,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x30000, 0x40000,
 		shutdown_dat, sizeof(shutdown_dat), &base)) {
+		bug("%s: Couldn't find shutdown in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("shutdown %08lx\n", base));
@@ -2705,6 +2784,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x13000, 0x1c000,
 		via_int_dat, sizeof(via_int_dat), &base)) {
+		bug("%s: Couldn't find via_int in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("via_int %08lx\n", base));
@@ -2723,6 +2803,7 @@ static bool patch_68k(void)
 	};
 	if (!find_rom_data(0x10000, 0x18000,
 		via_int2_dat, sizeof(via_int2_dat), &base)) {
+		bug("%s: Couldn't find via_int2 in ROM!\n", __func__);
 		return false;
 	}
 	D(bug("via_int2 %08lx\n", base));
@@ -2739,6 +2820,7 @@ static bool patch_68k(void)
 		};
 		if (!find_rom_data(0x15000, 0x19000,
 			via_int3_dat, sizeof(via_int3_dat), &base)) {
+			bug("%s: Couldn't find via_int3 in ROM!\n", __func__);
 			return false;
 		}
 		D(bug("via_int3 %08lx\n", base));

@@ -23,11 +23,15 @@
 
 // ROM types
 enum {
-	ROMTYPE_TNT,
-	ROMTYPE_ALCHEMY,
-	ROMTYPE_ZANZIBAR,
-	ROMTYPE_GAZELLE,
-	ROMTYPE_GOSSAMER,
+	ROMTYPE_TNT,		// Power Macintosh 7200 '94
+	ROMTYPE_PIP,		// Bandai Pippin '95
+	ROMTYPE_CORDYCEPS,	// Power Macintosh 6300 '96
+	ROMTYPE_ALCHEMY,	// Power Macintosh 6400 '96
+	ROMTYPE_ZANZIBAR,	// ???
+	ROMTYPE_PBX,		// PowerBook 1400cs '96
+	ROMTYPE_GAZELLE,	// Power Macintosh 6500 '97
+	ROMTYPE_GOSSAMER,	// Power Macintosh G3 '97
+	ROMTYPE_GRX,		// PowerBook G3 Wallstreet '97
 	ROMTYPE_NEWWORLD
 };
 extern int ROMType;
