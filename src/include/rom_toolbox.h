@@ -25,20 +25,20 @@
 #include "sysdeps.h"
 
 
-struct romInfo {
-	uint32	checksum;
-	uint16	version;
-	uint16	subVersion;
-	char*	nanokernelID;
-	uint32	resourceMapLocation;
-	uint32	trapTableLocation;
-};
+#define ROM_INFO_FIELD_SIZE 32
+
+#define GET_ROM_CHECKSUM	0
+#define GET_ROM_VERSION		1
+#define GET_ROM_SUBVERSION	2
+#define GET_ROM_NANOKERNEL	3
+#define GET_ROM_RESOURCEMAP	4
+#define GET_ROM_TRAPTABLE	5
 
 
 void DecodeLZSS(const uint8 *src, uint8 *dest, int size);
 void DecodeParcels(const uint8 *src, uint8 *dest, int size);
 bool DecodeROM(uint8 *data, uint32 size, uint8 *result);
-bool DecodeROMInfo(const char* fileName, romInfo *info);
+bool GetROMInfo(const char* fileName, uint32 item, char* result);
 
 
 #endif /* ROM_TOOLBOX_H */

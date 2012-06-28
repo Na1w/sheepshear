@@ -34,6 +34,7 @@
 #include "main.h"
 #include "prefs.h"
 #include "prefs_editor.h"
+#include "rom_toolbox.h"
 #include "video.h"
 #include "xpram.h"
 
@@ -44,9 +45,9 @@
 
 // Global variables
 static GtkWidget *win;				// Preferences window
+
 static bool start_clicked = false;	// Return value of PrefsEditor() function
 static int screen_width, screen_height; // Screen dimensions
-
 
 // Prototypes
 static void create_system_pane(GtkWidget *top);
@@ -56,7 +57,7 @@ static void create_graphics_pane(GtkWidget *top);
 static void create_input_pane(GtkWidget *top);
 static void create_serial_pane(GtkWidget *top);
 static void read_settings(void);
-
+static void update_rom_info(const char *file);
 
 /*
  *  Utility functions
@@ -67,6 +68,7 @@ static void read_settings(void);
 #define g_object_get_data(obj, key)				gtk_object_get_data((obj), (key))
 #define g_object_set_data(obj, key, data)		gtk_object_set_data((obj), (key), (data))
 #endif
+
 
 struct opt_desc {
 	int label_id;
@@ -109,6 +111,7 @@ static GtkWidget *make_browse_button(GtkWidget *entry)
 	gtk_signal_connect(GTK_OBJECT(button), "clicked", (GtkSignalFunc)cb_browse, (void *)entry);
 	return button;
 }
+
 
 static void add_menu_item(GtkWidget *menu, int label_id, GtkSignalFunc func)
 {
@@ -253,6 +256,7 @@ static GtkWidget *table_make_file_entry(GtkWidget *table, int row, int label_id,
 	g_object_set_data(G_OBJECT(entry), "chooser_button", button);
 	return entry;
 }
+
 
 static GtkWidget *make_option_menu(GtkWidget *top, int label_id, const opt_desc *options, int active)
 {
@@ -514,6 +518,17 @@ static void create_volume_ok(GtkWidget *button, file_req_assoc *assoc)
 		gtk_clist_append(GTK_CLIST(volume_list), &file);
 	gtk_widget_destroy(GTK_WIDGET(assoc->req));
 	delete assoc;
+}
+
+// Browse button to choose a Mac ROM
+static
+void cb_choose_rom(...)
+{
+	GtkWidget *req = gtk_file_selection_new(GetString(STR_ADD_VOLUME_TITLE));
+	gtk_signal_connect_object(GTK_OBJECT(req), "delete_event", GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(req));
+	gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(req)->ok_button), "clicked", GTK_SIGNAL_FUNC(add_volume_ok), new file_req_assoc(req, NULL));
+	gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(req)->cancel_button), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(req));
+	gtk_widget_show(req);
 }
 
 // "Add Volume" button clicked
@@ -1296,6 +1311,104 @@ static void create_system_pane(GtkWidget *top)
  */
 
 static GtkWidget *w_rom_file;
+static GtkWidget *romInfoChecksum;
+static GtkWidget *romInfoNanokernel;
+static GtkWidget *romInfoVersion;
+static GtkWidget *romInfoSubVersion;
+
+static void cb_rom_browse_ok(GtkWidget *button, file_req_assoc *assoc)
+{
+	gchar *file = (char *)gtk_file_selection_get_filename(GTK_FILE_SELECTION(assoc->req));
+	gtk_entry_set_text(GTK_ENTRY(assoc->entry), file);
+	// Now that the user has selected a ROM, we decode it and display information on it.
+	update_rom_info(file);
+	gtk_widget_destroy(assoc->req);
+	delete assoc;
+}
+
+
+static void cb_rom_browse(GtkWidget *widget, void *user_data)
+{
+	GtkWidget *req = gtk_file_selection_new(GetString(STR_BROWSE_TITLE));
+	gtk_file_selection_set_filename(GTK_FILE_SELECTION(req), gtk_entry_get_text(GTK_ENTRY(w_rom_file)));
+	gtk_signal_connect_object(GTK_OBJECT(req), "delete_event", GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(req));
+	gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(req)->ok_button), "clicked", GTK_SIGNAL_FUNC(cb_rom_browse_ok), new file_req_assoc(req, (GtkWidget *)user_data));
+	gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(req)->cancel_button), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(req));
+	gtk_widget_show(req);
+}
+
+
+static GtkWidget *make_rom_browse_button(GtkWidget *entry)
+{
+	GtkWidget *button;
+
+	button = gtk_button_new_with_label(GetString(STR_BROWSE_CTRL));
+	gtk_widget_show(button);
+	gtk_signal_connect(GTK_OBJECT(button), "clicked", (GtkSignalFunc)cb_rom_browse, (void *)entry);
+	return button;
+}
+
+
+static GtkWidget *table_make_rom_file_entry(GtkWidget *table, int row, int label_id, const char *prefs_item, bool only_dirs = false)
+{
+	GtkWidget *box, *label, *entry, *button;
+
+	label = gtk_label_new(GetString(label_id));
+	gtk_widget_show(label);
+	gtk_table_attach(GTK_TABLE(table), label, 0, 1, row, row + 1, (GtkAttachOptions)0, (GtkAttachOptions)0, 4, 4);
+
+	const char *str = PrefsFindString(prefs_item);
+	
+	if (str == NULL)
+		str = "";
+	else
+		update_rom_info(str);
+
+	box = gtk_hbox_new(FALSE, 4);
+	gtk_widget_show(box);
+	gtk_table_attach(GTK_TABLE(table), box, 1, 2, row, row + 1, (GtkAttachOptions)(GTK_FILL | GTK_EXPAND), (GtkAttachOptions)0, 4, 4);
+
+	entry = gtk_entry_new();
+	gtk_entry_set_text(GTK_ENTRY(entry), str); 
+	gtk_widget_show(entry);
+	gtk_box_pack_start(GTK_BOX(box), entry, TRUE, TRUE, 0);
+
+	button = make_rom_browse_button(entry);
+	gtk_box_pack_start(GTK_BOX(box), button, FALSE, FALSE, 0);
+	g_object_set_data(G_OBJECT(entry), "chooser_button", button);
+	return entry;
+}
+
+
+static GtkWidget *table_make_rom_info(GtkWidget *table, int row, gchar *labelName)
+{
+	GtkWidget *label, *opt, *menu, *value;
+	label = gtk_label_new(labelName);
+	gtk_widget_show(label);
+	gtk_table_attach(GTK_TABLE(table), label, 0, 1, row, row + 1, (GtkAttachOptions)0, (GtkAttachOptions)0, 4, 4);
+
+	value = gtk_label_new("unknown");
+	gtk_widget_show(value);
+	gtk_table_attach(GTK_TABLE(table), value, 0, 2, row, row + 1, (GtkAttachOptions)0, (GtkAttachOptions)0, 4, 4);
+	return value;
+}
+
+
+void
+update_rom_info(const char *file)
+{
+	char info[ROM_INFO_FIELD_SIZE];
+
+	GetROMInfo(file, GET_ROM_CHECKSUM, info);
+	gtk_label_set_text(GTK_LABEL(romInfoChecksum), info);
+	GetROMInfo(file, GET_ROM_NANOKERNEL, info);
+	gtk_label_set_text(GTK_LABEL(romInfoNanokernel), info);
+	GetROMInfo(file, GET_ROM_VERSION, info);
+	gtk_label_set_text(GTK_LABEL(romInfoVersion), info);
+	GetROMInfo(file, GET_ROM_SUBVERSION, info);
+	gtk_label_set_text(GTK_LABEL(romInfoSubVersion), info);
+}
+
 
 static void read_bios_settings(void)
 {
@@ -1314,7 +1427,11 @@ static void create_bios_pane(GtkWidget *top)
 	box = make_pane(top, STR_ROM_PANE_TITLE);
 	table = make_table(box, 2, 5);
 
-	w_rom_file = table_make_file_entry(table, 1, STR_ROM_FILE_CTRL, "rom");
+	romInfoChecksum = table_make_rom_info(table, 1, "Checksum");
+	romInfoNanokernel = table_make_rom_info(table, 2, "Nanokernel ID");
+	romInfoVersion = table_make_rom_info(table, 3, "Version");
+	romInfoSubVersion = table_make_rom_info(table, 4, "SubVersion");
+	w_rom_file = table_make_rom_file_entry(table, 6, STR_ROM_FILE_CTRL, "rom");
 }
 
 

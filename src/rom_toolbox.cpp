@@ -159,7 +159,7 @@ DecodeROM(uint8 *data, uint32 size, uint8 *result)
  * Decode ROM image into an easily parseable struct
  */
 bool
-DecodeROMInfo(const char* fileName, romInfo *info)
+GetROMInfo(const char* fileName, uint32 item, char* result)
 {
 	int romHandle = open(fileName, O_RDONLY);
 	if (romHandle < 0) {
@@ -179,17 +179,63 @@ DecodeROMInfo(const char* fileName, romInfo *info)
 		bug("%s: Invalid Mac ROM! (%s)\n", __func__, fileName);
 		free(decodedROM);
 		delete[] romBuffer;
+		sprintf(result, "invalid");
 		return false;
 	}
 	delete[] romBuffer;
 
-	// Load results into romInfo
-	info->checksum = ntohl(*(uint32 *)decodedROM);
-	info->version = ntohs(*(uint16 *)(decodedROM + 8));
-	info->subVersion = ntohs(*(uint16 *)(decodedROM + 18));
-	info->nanokernelID = (char *)decodedROM + 0x30d064;
-	info->resourceMapLocation = ntohl(*(uint32 *)(decodedROM + 26));
-	info->trapTableLocation = ntohl(*(uint32 *)(decodedROM + 34));
+	int length = 0;
+	memset(result, ' ', ROM_INFO_FIELD_SIZE);
+	switch (item) {
+		case GET_ROM_CHECKSUM:
+			length = 9;
+			snprintf(result, ROM_INFO_FIELD_SIZE, "%08lX",
+				ntohl(*(uint32 *)decodedROM));
+			break;
+		case GET_ROM_VERSION:
+			length = 5;
+			snprintf(result, ROM_INFO_FIELD_SIZE, "%04X",
+				ntohs(*(uint16 *)(decodedROM + 8)));
+			break;
+		case GET_ROM_SUBVERSION:
+			length = 5;
+			snprintf(result, ROM_INFO_FIELD_SIZE, "%04X",
+				ntohs(*(uint16 *)(decodedROM + 18)));
+			break;
+		case GET_ROM_NANOKERNEL:
+			length = 17;
+			snprintf(result, ROM_INFO_FIELD_SIZE, "%s",
+				(char *)decodedROM + 0x30d064);
+			for (int i = 0; i < ROM_INFO_FIELD_SIZE; i++) {
+				// Lets give nanokernel id up to first non-ascii
+				if (result[i] < 32 || result[i] > 126) {
+					length = i - 1;
+					break;
+				}
+			}
+			break;
+		case GET_ROM_RESOURCEMAP:
+			length = 9;
+			snprintf(result, ROM_INFO_FIELD_SIZE, "%08lX",
+				ntohl(*(uint32 *)(decodedROM + 26)));
+			break;
+		case GET_ROM_TRAPTABLE:
+			length = 9;
+			snprintf(result, ROM_INFO_FIELD_SIZE, "%08lX",
+				ntohl(*(uint32 *)(decodedROM + 34)));
+			break;
+	}
+
+	// Put end of line at determined length point
+	result[length + 1] = '\0';
+
+	// Clean up any remaining non-ascii data
+	for (int i = 0; i < length; i++) {
+		if (result[i] < 32 || result[i] > 126) {
+			// Erase non-ascii char
+			result[i] = ' ';
+		}
+	}
 
 	free(decodedROM);
 	return true;
