@@ -1740,7 +1740,6 @@ static bool patch_68k(void)
 		lp[48] = htonl(0xf8000000);
 	}
 
-#if 0
 	// Don't initialize VIA (via Universal)
 	static const uint8 via_init_dat[] = {
 		0x08, 0x00, 0x00, 0x02,
@@ -1781,7 +1780,6 @@ static bool patch_68k(void)
 	D(bug("via_init3 %08lx\n", base));
 	wp = (uint16 *)(ROMBaseHost + base);
 	*wp = htons(0x4ed6);			// jmp	(a6)
-#endif
 
 	// Don't RunDiags, get BootGlobs pointer directly
 	if (ROMType == ROMTYPE_NEWWORLD) {
