@@ -1380,7 +1380,8 @@ static GtkWidget *table_make_rom_file_entry(GtkWidget *table, int row, int label
 }
 
 
-static GtkWidget *table_make_rom_info(GtkWidget *table, int row, gchar *labelName)
+static GtkWidget*
+table_make_rom_info(GtkWidget *table, int row, const gchar *labelName)
 {
 	GtkWidget *label, *opt, *menu, *value;
 	label = gtk_label_new(labelName);
