@@ -57,6 +57,7 @@ prefs_desc common_prefs_items[] = {
 	{"ignoreillegal", TYPE_BOOLEAN, false, "ignore illegal instructions"},
 	{"jit", TYPE_BOOLEAN, false,        "enable JIT compiler"},
 	{"jit68k", TYPE_BOOLEAN, false,     "enable 68k DR emulator"},
+	{"ppcinslog", TYPE_BOOLEAN, false,	"enable PPC instruction logging"},
 	{"keyboardtype", TYPE_INT32, false, "hardware keyboard type"},
 	{NULL, TYPE_END, false, NULL} // End of list
 };
@@ -90,6 +91,7 @@ void AddPrefsDefaults(void)
 	PrefsAddBool("jit", false);
 #endif
 	PrefsAddBool("jit68k", false);
+	PrefsAddBool("ppcinslog", false);
 
 	PrefsAddInt32("keyboardtype", 5);
 }

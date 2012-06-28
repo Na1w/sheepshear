@@ -810,6 +810,7 @@ void init_emul_ppc(void)
 	ppc_cpu = new sheepshaver_cpu();
 	ppc_cpu->set_register(powerpc_registers::GPR(3), any_register((uint32)ROMBase + 0x30d000));
 	ppc_cpu->set_register(powerpc_registers::GPR(4), any_register(KernelDataAddr + 0x1000));
+	D(bug("%s: entering run mode\n", __func__));
 	WriteMacInt32(XLM_RUN_MODE, MODE_68K);
 
 #if ENABLE_MON
@@ -891,9 +892,9 @@ void init_emul_op_trampolines(basic_dyngen & dg)
 
 void emul_ppc(uint32 entry)
 {
-#if 0
-	ppc_cpu->start_log();
-#endif
+	if (PrefsFindBool("ppcinslog"))
+		ppc_cpu->start_log();
+
 	// start emulation loop and enable code translation or caching
 	ppc_cpu->execute(entry);
 }
