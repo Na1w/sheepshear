@@ -1947,7 +1947,16 @@ static bool patch_68k(void)
 		*wp = htons(0x4ed3);			// jmp	(a3)
 
 		static const uint32 nvram4_loc[] = {
-			0x582f0, 0xa0a0, 0x7e50, 0xa1d0, 0x538d0, 0
+			0x582f0,	// TNT
+			0,			// PIP
+			0,			// CORDYCEPS
+			0xa0a0,		// ALCHEMY
+			0x7e50,		// ZANZIBAR
+			0,			// PBX
+			0xa1d0,		// GAZELLE
+			0x538d0,	// GOSSAMER
+			0,			// GRX
+			0			// NEWWORLD
 		};
 		wp = (uint16 *)(ROMBaseHost + nvram4_loc[ROMType]);
 		*wp++ = htons(0x202f);			// move.l	4(sp),d0
@@ -1963,7 +1972,16 @@ static bool patch_68k(void)
 		}
 
 		static const uint32 nvram5_loc[] = {
-			0x58460, 0xa0f0, 0x7f40, 0xa220, 0x53a20, 0
+			0x58460,	// TNT
+			0,			// PIP
+			0,			// CORDYCEPS
+			0xa0f0,		// ALCHEMY
+			0x7f40,		// ZANZIBAR
+			0,			// PBX
+			0xa220,		// GAZELLE
+			0x53a20,	// GOSSAMER
+			0,			// GRX
+			0			// NEWWORLD
 		};
 		wp = (uint16 *)(ROMBaseHost + nvram5_loc[ROMType]);
 		if (ROMType == ROMTYPE_ZANZIBAR || ROMType == ROMTYPE_GAZELLE) {
