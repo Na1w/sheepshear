@@ -229,7 +229,7 @@ static uint32 apple_stream_info;	// Mac address of SoundComponentData struct des
 
 
 void
-PlatformAudio::PlayBuffer(void *arg, void *buf, size_t size, const media_raw_audio_format &format)
+PlatformAudio::Stream(void *arg, void *buf, size_t size, const media_raw_audio_format &format)
 {
 	// Check if new buffer is available
 	if (acquire_sem_etc(audio_irq_done_sem, 1, B_TIMEOUT, 0) == B_NO_ERROR) {
