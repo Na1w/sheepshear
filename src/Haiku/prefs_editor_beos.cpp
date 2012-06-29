@@ -721,24 +721,17 @@ BView *PrefsWindow::CreatePaneRom(void)
 void
 PrefsWindow::RefreshROMInfo()
 {
-	romInfo info;
 	const char* file = fROMField->Text();
 
-	if (!DecodeROMInfo(file, &info)) {
-		// Invalid rom!
-		fROMInfoNanokernel->SetText("invalid");
-	} else {
-		char checksum[32];
-		snprintf(checksum, 32, "%08lX", info.checksum);
-		fROMInfoChecksum->SetText(checksum);
-		fROMInfoNanokernel->SetText(info.nanokernelID);
-
-		char version[32];
-		snprintf(version, 32, "%04X", info.version);
-		fROMInfoVersion->SetText(version);
-		snprintf(version, 32, "%04X", info.subVersion);
-		fROMInfoSubVersion->SetText(version);
-	}
+	char value[ROM_INFO_FIELD_SIZE];
+	GetROMInfo(file, GET_ROM_CHECKSUM, value);
+	fROMInfoChecksum->SetText(value);
+	GetROMInfo(file, GET_ROM_NANOKERNEL, value);
+	fROMInfoNanokernel->SetText(value);
+	GetROMInfo(file, GET_ROM_VERSION, value);
+	fROMInfoVersion->SetText(value);
+	GetROMInfo(file, GET_ROM_SUBVERSION, value);
+	fROMInfoSubVersion->SetText(value);
 }
 
 
