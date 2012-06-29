@@ -49,7 +49,7 @@ MacPRAM::Load(const char* basedir)
 	// Construct XPRAM path
 	BPath pramFile;
 	
-	find_directory(B_USER_SETTINGS_DIRECTORY, pramFile, true);
+	find_directory(B_USER_SETTINGS_DIRECTORY, &pramFile, true);
 	pramFile.Append(PROGRAM_NAME);
 	pramFile.Append(XPRAM_FILE_NAME);
 
