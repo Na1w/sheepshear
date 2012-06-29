@@ -40,13 +40,13 @@ public:
 							MacPRAM(const char*);
 							~MacPRAM();
 
-			void			Load();
+			void			Load(const char* basedir);
 			void			Save();
 			void			Zap();
 
 			uint8			fPRAM[XPRAM_SIZE];
 private:
-			char			fPRAMFile;
+			char			fPRAMFile[PATH_MAX];
 };
 
 

@@ -36,10 +36,7 @@ MacPRAM::MacPRAM(const char *vmdir)
 	// Clear PRAM space
 	memset(fPRAM, 0, XPRAM_SIZE);
 
-	if (vmdir != NULL)
-		strcpy(&fPRAMFile, vmdir);
-
-	Load();
+	Load(vmdir);
 }
 
 

@@ -34,36 +34,32 @@
 
 // XPRAM file name and path
 #if POWERPC_ROM
-const char XPRAM_FILE_NAME[] = "NVRAM_data";
+const char XPRAM_FILE_NAME[] = ".sheepshear_nvram";
 #else
-const char XPRAM_FILE_NAME[] = "XPRAM_data";
+const char XPRAM_FILE_NAME[] = ".sheepshear_xpram";
 #endif
-
-
-static status_t
-generate_path(BPath* pramFile)
-{
-	find_directory(B_USER_SETTINGS_DIRECTORY, pramFile, true);
-	pramFile->Append(PROGRAM_NAME);
-	pramFile->Append(XPRAM_FILE_NAME);
-}
 
 
 /*
  *  Load XPRAM from settings file
  */
 void
-MacPRAM::Load()
+MacPRAM::Load(const char* basedir)
 {
 	// Construct XPRAM path
 	BPath pramFile;
-	generate_path(&pramFile);
+	
+	find_directory(B_USER_SETTINGS_DIRECTORY, pramFile, true);
+	pramFile.Append(PROGRAM_NAME);
+	pramFile.Append(XPRAM_FILE_NAME);
 
 	D(bug("%s: %s\n", __func__, pramFile.Path()));
 
+	strncpy(fPRAMFile, pramFile.Path(), PATH_MAX);
+
 	// Load XPRAM from settings file
 	int fd;
-	if ((fd = open(pramFile.Path(), O_RDONLY)) >= 0) {
+	if ((fd = open(fPRAMFile, O_RDONLY)) >= 0) {
 		read(fd, fPRAM, XPRAM_SIZE);
 		close(fd);
 	}
@@ -76,34 +72,25 @@ MacPRAM::Load()
 void
 MacPRAM::Save()
 {
-	// Construct XPRAM path
-	BPath pramFile;
-	generate_path(&pramFile);
-
-	D(bug("%s: %s\n", __func__, pramFile.Path()));
+	D(bug("%s: %s\n", __func__, fPRAMFile));
 
 	int fd;
-	if ((fd = open(pramFile.Path(), O_WRONLY | O_CREAT, 0666)) >= 0) {
+	if ((fd = open(fPRAMFile, O_WRONLY | O_CREAT, 0666)) >= 0) {
 		write(fd, fPRAM, XPRAM_SIZE);
 		close(fd);
 	} else
-		bug("%s: Failed to write PRAM to %s\n", __func__, pramFile.Path());
+		bug("%s: Failed to write PRAM to %s\n", __func__, fPRAMFile);
 }
 
 
 /*
  *  Delete PRAM file
  */
-
 void
 MacPRAM::Zap(void)
 {
-	// Construct XPRAM path
-	BPath pramFile;
-	generate_path(&pramFile);
-
-	D(bug("%s: %s\n", __func__, pramFile.Path()));
+	D(bug("%s: %s\n", __func__, fPRAMFile));
 
 	// Delete file
-	unlink(pramFile.Path());
+	unlink(fPRAMFile);
 }

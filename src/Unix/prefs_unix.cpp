@@ -46,7 +46,7 @@ prefs_desc platform_prefs_items[] = {
 
 
 // Prefs file name and path
-const char PREFS_FILE_NAME[] = ".sheepshaver_prefs";
+const char PREFS_FILE_NAME[] = ".sheepshear_prefs";
 static char prefs_path[1024];
 
 

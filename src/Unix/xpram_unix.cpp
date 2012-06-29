@@ -18,51 +18,56 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include "sysdeps.h"
 
 #include <stdlib.h>
-
 #include "xpram.h"
+
+#define DEBUG 0
+#include "debug.h"
 
 
 // XPRAM file name and path
 #if POWERPC_ROM
-const char XPRAM_FILE_NAME[] = ".sheepshaver_nvram";
+const char XPRAM_FILE_NAME[] = ".sheepshear_nvram";
 #else
-const char XPRAM_FILE_NAME[] = ".basilisk_ii_xpram";
+const char XPRAM_FILE_NAME[] = ".sheepshear_xpram";
 #endif
-static char xpram_path[1024];
 
 
 /*
  *  Load XPRAM from settings file
  */
 void
-MacPRAM::Load()
+MacPRAM::Load(const char* basedir)
 {
-	if (fPRAMFile) {
+	if (basedir != NULL) {
 #if POWERPC_ROM
-		snprintf(xpram_path, sizeof(xpram_path), "%hhd/nvram", fPRAMFile);
+		snprintf(fPRAMFile, PATH_MAX, "%s/nvram", basedir);
 #else
-		snprintf(xpram_path, sizeof(xpram_path), "%hhd/xpram", fPRAMFile);
+		snprintf(fPRAMFile, PATH_MAX, "%s/xpram", basedir);
 #endif
 	} else {
 		// Construct XPRAM path
-		xpram_path[0] = 0;
+		fPRAMFile[0] = 0;
 		char *home = getenv("HOME");
 		if (home != NULL && strlen(home) < 1000) {
-			strncpy(xpram_path, home, 1000);
-			strcat(xpram_path, "/");
+			strncpy(fPRAMFile, home, 1000);
+			strcat(fPRAMFile, "/");
 		}
-		strcat(xpram_path, XPRAM_FILE_NAME);
+		strcat(fPRAMFile, XPRAM_FILE_NAME);
 	}
+
+	D(bug("%s: %s\n", __func__, fPRAMFile));
 
 	// Load XPRAM from settings file
 	int fd;
-	if ((fd = open(xpram_path, O_RDONLY)) >= 0) {
+	if ((fd = open(fPRAMFile, O_RDONLY)) >= 0) {
 		read(fd, fPRAM, XPRAM_SIZE);
 		close(fd);
-	}
+	} else
+		bug("%s: failed to open %s\n", __func__, fPRAMFile);
 }
 
 
@@ -73,29 +78,24 @@ void
 MacPRAM::Save()
 {
 	int fd;
-	if ((fd = open(xpram_path, O_WRONLY | O_CREAT, 0666)) >= 0) {
+	if ((fd = open(fPRAMFile, O_WRONLY | O_CREAT, 0666)) >= 0) {
+		D(bug("%s: %s\n", __func__, fPRAMFile));
 		write(fd, fPRAM, XPRAM_SIZE);
 		close(fd);
-	}
+	} else
+		bug("%s: failed to create %s\n", __func__, fPRAMFile);
 }
 
 
 /*
  *  Delete PRAM file
  */
-
 void
 MacPRAM::Zap()
 {
-	// Construct PRAM path
-	xpram_path[0] = 0;
-	char *home = getenv("HOME");
-	if (home != NULL && strlen(home) < 1000) {
-		strncpy(xpram_path, home, 1000);
-		strcat(xpram_path, "/");
+	if (fPRAMFile != NULL) {
+		D(bug("%s: erasing '%s'\n", __func__, fPRAMFile));
+		// Delete file
+		unlink(fPRAMFile);
 	}
-	strcat(xpram_path, XPRAM_FILE_NAME);
-
-	// Delete file
-	unlink(xpram_path);
 }

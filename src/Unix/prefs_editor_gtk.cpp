@@ -409,7 +409,9 @@ static void mn_about(...)
 // "Zap NVRAM" selected
 static void mn_zap_pram(...)
 {
-	gMacPRAM->Zap();
+	// Prevent pointer deference. We need to load gMacPRAM with the gui.
+	if (gMacPRAM != NULL)
+		gMacPRAM->Zap();
 }
 
 
