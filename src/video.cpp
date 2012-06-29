@@ -23,6 +23,7 @@
  * - check for supported modes ???
  */
 
+
 #include <stdio.h>
 #include <string.h>
 
@@ -111,12 +112,14 @@ static int16 set_gamma(VidLocals *csSave, uint32 gamma);
  */
 MacVideo::MacVideo()
 {
+	D(bug("%s: called\n", __func__));
 	DeviceInit();
 }
 
 
 MacVideo::~MacVideo()
 {
+	D(bug("%s: called\n", __func__));
 	DeviceShutdown();
 }
 
@@ -124,6 +127,7 @@ MacVideo::~MacVideo()
 void
 MacVideo::Interrupt()
 {
+	D(bug("%s: called\n", __func__));
 	DeviceInterrupt();
 }
 
@@ -175,10 +179,10 @@ static bool UseHardwareCursor(void)
 /*
  *  Video driver open routine
  */
-
-static int16 VideoOpen(uint32 pb, VidLocals *csSave)
+int16
+MacVideo::DriverOpen(uint32 pb, VidLocals *csSave)
 {
-	D(bug("Video Open\n"));
+	D(bug("%s: called\n", __func__));
 
 	// Set up VidLocals
 	csSave->saveBaseAddr = screen_base;
@@ -205,8 +209,24 @@ static int16 VideoOpen(uint32 pb, VidLocals *csSave)
 	SheepVar32 theServiceID = 0;
 	VSLNewInterruptService(csSave->regEntryID, FOURCC('v','b','l',' '), theServiceID.addr());
 	csSave->vslServiceID = theServiceID.value();
-	D(bug(" Interrupt ServiceID %08lx\n", csSave->vslServiceID));
+	D(bug(" Interrupt ServiceID %08x\n", csSave->vslServiceID));
 	csSave->interruptsEnabled = true;
+
+	return noErr;
+}
+
+
+/*
+ *  Video driver close routine
+ */
+int16
+MacVideo::DriverClose(uint32 pb, VidLocals *csSave)
+{
+	D(bug("%s: called\n", __func__));
+
+	// Delete interrupt service
+	csSave->interruptsEnabled = false;
+	VSLDisposeInterruptService(csSave->vslServiceID);
 
 	return noErr;
 }
@@ -215,9 +235,9 @@ static int16 VideoOpen(uint32 pb, VidLocals *csSave)
 /*
  *  Video driver control routine
  */
-
 static bool allocate_gamma_table(VidLocals *csSave, uint32 size)
 {
+	D(bug("%s: called\n", __func__));
 	if (size > csSave->maxGammaTableSize) {
 		if (csSave->gammaTable) {
 			Mac_sysfree(csSave->gammaTable);
@@ -231,8 +251,10 @@ static bool allocate_gamma_table(VidLocals *csSave, uint32 size)
 	return true;
 }
 
+
 static int16 set_gamma(VidLocals *csSave, uint32 gamma)
 {
+	D(bug("%s: called\n", __func__));
 	if (gamma == 0) { // Build linear ramp, 256 entries
 
 		// Allocate new table, if necessary
@@ -281,11 +303,11 @@ static int16 set_gamma(VidLocals *csSave, uint32 gamma)
 }
 
 
-uint16
-MacVideo::Control(uint32 pb, VidLocals *csSave)
+int16
+MacVideo::DriverControl(uint32 pb, VidLocals *csSave)
 {
 	int16 code = ReadMacInt16(pb + csCode);
-	D(bug("%s %d: ", __func__, code));
+	D(bug("%s: %d: ", __func__, code));
 	uint32 param = ReadMacInt32(pb + csParam);
 	switch (code) {
 
@@ -638,10 +660,11 @@ static void get_size_of_resolution(int id, uint32 &x, uint32 &y)
 	x = y = 0;
 }
 
-static int16 VideoStatus(uint32 pb, VidLocals *csSave)
+int16
+MacVideo::DriverStatus(uint32 pb, VidLocals *csSave)
 {
 	int16 code = ReadMacInt16(pb + csCode);
-	D(bug("VideoStatus %d: ", code));
+	D(bug("%s: %d: ", __func__, code));
 	uint32 param = ReadMacInt32(pb + csParam);
 	switch (code) {
 
@@ -652,7 +675,7 @@ static int16 VideoStatus(uint32 pb, VidLocals *csSave)
 			WriteMacInt16(param + csPage, csSave->savePage);
 			D(bug("return: mode:%04x page:%04x ", ReadMacInt16(param + csMode),
 				ReadMacInt16(param + csPage)));
-			D(bug("base adress %08lx\n", ReadMacInt32(param + csBaseAddr)));
+			D(bug("base adress %08x\n", ReadMacInt32(param + csBaseAddr)));
 			return noErr;
 
 		case cscGetEntries: {						// GetEntries
@@ -732,9 +755,9 @@ static int16 VideoStatus(uint32 pb, VidLocals *csSave)
 			WriteMacInt16(param + csPage, csSave->savePage);
 			WriteMacInt32(param + csBaseAddr, csSave->saveBaseAddr);
 			
-			D(bug("return: mode:%04x ID:%08lx page:%04x ", ReadMacInt16(param + csMode),
+			D(bug("return: mode:%04x ID:%08x page:%04x ", ReadMacInt16(param + csMode),
 				ReadMacInt32(param + csData), ReadMacInt16(param + csPage)));
-			D(bug("base adress %08lx\n", ReadMacInt32(param + csBaseAddr)));
+			D(bug("base adress %08x\n", ReadMacInt32(param + csBaseAddr)));
 			return noErr;
 
 		case cscGetConnection:						// GetConnection
@@ -842,7 +865,7 @@ static int16 VideoStatus(uint32 pb, VidLocals *csSave)
 		}
 
 		case cscGetVideoParameters:					// GetVideoParameters
-			D(bug("GetVideoParameters ID:%08lx Depth:%04x\n",
+			D(bug("GetVideoParameters ID:%08x Depth:%04x\n",
 				ReadMacInt32(param + csDisplayModeID),
 				ReadMacInt16(param + csDepthMode)));
 
@@ -913,7 +936,7 @@ static int16 VideoStatus(uint32 pb, VidLocals *csSave)
 			return paramErr;
 
 		case cscGetModeTiming:
-			D(bug("GetModeTiming mode %08lx\n", ReadMacInt32(param + csTimingMode)));
+			D(bug("GetModeTiming mode %08x\n", ReadMacInt32(param + csTimingMode)));
 			WriteMacInt32(param + csTimingFormat, kDeclROMtables);
 			WriteMacInt32(param + csTimingFlags, (1<<kModeValid)|(1<<kModeSafe)|(1<<kShowModeNow));		// Mode valid, safe, default and shown in Monitors panel
 			for (int i=0; VModes[i].viType!=DISPLAY_INVALID; i++) {
@@ -988,28 +1011,15 @@ static int16 VideoStatus(uint32 pb, VidLocals *csSave)
 
 
 /*
- *  Video driver close routine
- */
-
-static int16 VideoClose(uint32 pb, VidLocals *csSave)
-{
-	D(bug("VideoClose\n"));
-
-	// Delete interrupt service
-	csSave->interruptsEnabled = false;
-	VSLDisposeInterruptService(csSave->vslServiceID);
-
-	return noErr;
-}
-
-
-/*
  *  Native (PCI) driver entry
  */
-
-int16 VideoDoDriverIO(uint32 spaceID, uint32 commandID, uint32 commandContents, uint32 commandCode, uint32 commandKind)
+int16
+MacVideo::DriverIO(uint32 spaceID, uint32 commandID, uint32 commandContents, uint32 commandCode, uint32 commandKind)
 {
-//	D(bug("VideoDoDriverIO space %08x, command %08x, contents %08x, code %d, kind %d\n", spaceID, commandID, commandContents, commandCode, commandKind));
+	#if 1
+	D(bug("%s: space %08x, command %08x, contents %08x, code %d, kind %d\n",
+		__func__, spaceID, commandID, commandContents, commandCode, commandKind));
+	#endif
 	int16 err = noErr;
 
 	switch (commandCode) {
@@ -1024,37 +1034,37 @@ int16 VideoDoDriverIO(uint32 spaceID, uint32 commandID, uint32 commandContents, 
 			delete private_data;
 
 			iocic_tvect = FindLibSymbol("\021DriverServicesLib", "\023IOCommandIsComplete");
-			D(bug("IOCommandIsComplete TVECT at %08lx\n", iocic_tvect));
+			D(bug("IOCommandIsComplete TVECT at %08x\n", iocic_tvect));
 			if (iocic_tvect == 0) {
-				printf("FATAL: VideoDoDriverIO(): Can't find IOCommandIsComplete()\n");
+				printf("FATAL: %s(): Can't find IOCommandIsComplete()\n", __func__);
 				err = -1;
 				break;
 			}
 			vslnewis_tvect = FindLibSymbol("\020VideoServicesLib", "\026VSLNewInterruptService");
-			D(bug("VSLNewInterruptService TVECT at %08lx\n", vslnewis_tvect));
+			D(bug("VSLNewInterruptService TVECT at %08x\n", vslnewis_tvect));
 			if (vslnewis_tvect == 0) {
-				printf("FATAL: VideoDoDriverIO(): Can't find VSLNewInterruptService()\n");
+				printf("FATAL: %s(): Can't find VSLNewInterruptService()\n", __func__);
 				err = -1;
 				break;
 			}
 			vsldisposeis_tvect = FindLibSymbol("\020VideoServicesLib", "\032VSLDisposeInterruptService");
-			D(bug("VSLDisposeInterruptService TVECT at %08lx\n", vsldisposeis_tvect));
+			D(bug("VSLDisposeInterruptService TVECT at %08x\n", vsldisposeis_tvect));
 			if (vsldisposeis_tvect == 0) {
-				printf("FATAL: VideoDoDriverIO(): Can't find VSLDisposeInterruptService()\n");
+				printf("FATAL: %s(): Can't find VSLDisposeInterruptService()\n", __func__);
 				err = -1;
 				break;
 			}
 			vsldois_tvect = FindLibSymbol("\020VideoServicesLib", "\025VSLDoInterruptService");
-			D(bug("VSLDoInterruptService TVECT at %08lx\n", vsldois_tvect));
+			D(bug("VSLDoInterruptService TVECT at %08x\n", vsldois_tvect));
 			if (vsldois_tvect == 0) {
-				printf("FATAL: VideoDoDriverIO(): Can't find VSLDoInterruptService()\n");
+				printf("FATAL: %s(): Can't find VSLDoInterruptService()\n", __func__);
 				err = -1;
 				break;
 			}
 			nqdmisc_tvect = FindLibSymbol("\014InterfaceLib", "\007NQDMisc");
-			D(bug("NQDMisc TVECT at %08lx\n", nqdmisc_tvect));
+			D(bug("NQDMisc TVECT at %08x\n", nqdmisc_tvect));
 			if (nqdmisc_tvect == 0) {
-				printf("FATAL: VideoDoDriverIO(): Can't find NQDMisc()\n");
+				printf("FATAL: %s(): Can't find NQDMisc()\n", __func__);
 				err = -1;
 				break;
 			}
@@ -1063,7 +1073,7 @@ int16 VideoDoDriverIO(uint32 spaceID, uint32 commandID, uint32 commandContents, 
 			private_data->gammaTable = 0;
 			private_data->regEntryID = Mac_sysalloc(sizeof(RegEntryID));
 			if (private_data->regEntryID == 0) {
-				printf("FATAL: VideoDoDriverIO(): Can't allocate service owner\n");
+				printf("FATAL: %s(): Can't allocate service owner\n", __func__);
 				err = -1;
 				break;
 			}
@@ -1084,19 +1094,19 @@ int16 VideoDoDriverIO(uint32 spaceID, uint32 commandID, uint32 commandContents, 
 			break;
 
 		case kOpenCommand:
-			err = VideoOpen(commandContents, private_data);
+			err = DriverOpen(commandContents, private_data);
 			break;
 
 		case kCloseCommand:
-			err = VideoClose(commandContents, private_data);
+			err = DriverClose(commandContents, private_data);
 			break;
 
 		case kControlCommand:
-			err = gMacVideo->Control(commandContents, private_data);
+			err = DriverControl(commandContents, private_data);
 			break;
 
 		case kStatusCommand:
-			err = VideoStatus(commandContents, private_data);
+			err = DriverStatus(commandContents, private_data);
 			break;
 
 		case kReadCommand:

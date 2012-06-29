@@ -1015,13 +1015,18 @@ void sheepshaver_cpu::execute_native_op(uint32 selector)
 		DoPatchNameRegistry();
 		break;
 	case NATIVE_VIDEO_INSTALL_ACCEL:
-		gMacVideo->InstallAccel();
+		if (gMacVideo != NULL)
+			gMacVideo->InstallAccel();
 		break;
 	case NATIVE_VIDEO_VBL:
-		gMacVideo->Interrupt();
+		if (gMacVideo != NULL)
+			gMacVideo->Interrupt();
 		break;
 	case NATIVE_VIDEO_DO_DRIVER_IO:
-		gpr(3) = (int32)(int16)VideoDoDriverIO(gpr(3), gpr(4), gpr(5), gpr(6), gpr(7));
+		if (gMacVideo != NULL) {
+			gpr(3) = (int32)gMacVideo->DriverIO(gpr(3), gpr(4), gpr(5),
+				gpr(6), gpr(7));
+		}
 		break;
 	case NATIVE_ETHER_AO_GET_HWADDR:
 		AO_get_ethernet_address(gpr(3));
@@ -1157,10 +1162,10 @@ void Execute68kTrap(uint16 trap, M68kRegisters *r)
 	Execute68k(proc, r);
 }
 
+
 /*
  *  Call MacOS PPC code
  */
-
 uint32 call_macos(uint32 tvect)
 {
 	return ppc_cpu->execute_macos_code(tvect, 0, NULL);

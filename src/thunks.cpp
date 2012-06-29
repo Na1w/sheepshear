@@ -299,9 +299,9 @@ bool ThunksInit(void)
 #endif
 	// FIXME: add GetResource() and friends for completeness
 	DEFINE_NATIVE_OP(NATIVE_PATCH_NAME_REGISTRY, DoPatchNameRegistry);
-	DEFINE_NATIVE_OP(NATIVE_VIDEO_INSTALL_ACCEL, gMacVideo->VideoInstallAccel);
+	DEFINE_NATIVE_OP(NATIVE_VIDEO_INSTALL_ACCEL, gMacVideo->InstallAccel);
 	DEFINE_NATIVE_OP(NATIVE_VIDEO_VBL, gMacVideo->Interrupt);
-	DEFINE_NATIVE_OP(NATIVE_VIDEO_DO_DRIVER_IO, VideoDoDriverIO);
+	DEFINE_NATIVE_OP(NATIVE_VIDEO_DO_DRIVER_IO, gMacVideo->DriverIO);
 	DEFINE_NATIVE_OP(NATIVE_ETHER_AO_GET_HWADDR, AO_get_ethernet_address);
 	DEFINE_NATIVE_OP(NATIVE_ETHER_AO_ADD_MULTI, AO_enable_multicast);
 	DEFINE_NATIVE_OP(NATIVE_ETHER_AO_DEL_MULTI, AO_disable_multicast);

@@ -28,7 +28,6 @@
 extern bool VideoActivated(void);
 extern bool VideoSnapshot(int xsize, int ysize, uint8 *p);
 
-extern int16 VideoDoDriverIO(uint32 spaceID, uint32 commandID, uint32 commandContents, uint32 commandCode, uint32 commandKind);
 
 // System specific and internal functions/data
 struct VideoInfo {
@@ -114,8 +113,16 @@ public:
 							MacVideo();
 							~MacVideo();
 
-	uint16					Control(uint32 pb, VidLocals *csSave);
+	int16					DriverIO(uint32 spaceID, uint32 commandID,
+								uint32 commandContents, uint32 commandCode,
+								uint32 commandKind);
 	void					Interrupt();
+
+private:
+	int16					DriverOpen(uint32 pb, VidLocals *csSave);
+	int16					DriverClose(uint32 pb, VidLocals *csSave);
+	int16					DriverControl(uint32 pb, VidLocals *csSave);
+	int16					DriverStatus(uint32 pb, VidLocals *csSave);
 
 	void					QuitFullScreen();
 };
