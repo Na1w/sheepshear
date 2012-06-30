@@ -189,7 +189,7 @@ GetROMInfo(const char* fileName, uint32 item, char* result)
 	switch (item) {
 		case GET_ROM_CHECKSUM:
 			length = 9;
-			snprintf(result, ROM_INFO_FIELD_SIZE, "%08lX",
+			snprintf(result, ROM_INFO_FIELD_SIZE, "%08X",
 				ntohl(*(uint32 *)decodedROM));
 			break;
 		case GET_ROM_VERSION:
@@ -216,12 +216,12 @@ GetROMInfo(const char* fileName, uint32 item, char* result)
 			break;
 		case GET_ROM_RESOURCEMAP:
 			length = 9;
-			snprintf(result, ROM_INFO_FIELD_SIZE, "%08lX",
+			snprintf(result, ROM_INFO_FIELD_SIZE, "%08X",
 				ntohl(*(uint32 *)(decodedROM + 26)));
 			break;
 		case GET_ROM_TRAPTABLE:
 			length = 9;
-			snprintf(result, ROM_INFO_FIELD_SIZE, "%08lX",
+			snprintf(result, ROM_INFO_FIELD_SIZE, "%08X",
 				ntohl(*(uint32 *)(decodedROM + 34)));
 			break;
 	}
