@@ -1,7 +1,10 @@
 #ifndef __SEMAPHORE_H
 #define __SEMAPHORE_H
 
+
+#undef SEM_VALUE_MAX
 #define SEM_VALUE_MAX 64
+
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {

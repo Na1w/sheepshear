@@ -18,12 +18,12 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 /*
  * OK, I had really big problems with SysV semaphores :/
  * I rewrote those one giving a look to the source of linuxthreads
  * with mutex. Seems to be working correctly now.
  */
+
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -33,11 +33,12 @@
 
 #include "semaphore.h"
 
+
 extern "C" {
 
 int sem_init(sem_t* sem, int pshared, unsigned int value)
 {
-	if(sem==NULL||value>SEM_VALUE_MAX) {
+	if(sem==NULL || value > SEM_VALUE_MAX) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -54,7 +55,7 @@ int sem_init(sem_t* sem, int pshared, unsigned int value)
 
 int sem_destroy(sem_t* sem)
 {
-	if(sem==NULL) {
+	if(sem == NULL) {
 		errno = EINVAL;
 		return -1;
 	}

@@ -27,6 +27,9 @@
  *     (i.e. to use the semaphore as a signal)
  */
 
+
+#include "semaphore.h"
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <stdlib.h>
@@ -55,7 +58,6 @@ typedef struct {
 	_pthread_descr __sem_waiting;
 } sem_t;
 
-#define SEM_VALUE_MAX 64
 #define status __status
 #define spinlock __spinlock
 #define sem_lock __sem_lock
