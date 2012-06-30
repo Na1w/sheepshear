@@ -67,7 +67,7 @@ PlatformAudio::DeviceShutdown(void)
 /*
  *  Open audio device
  */
-void
+bool
 PlatformAudio::DeviceOpen()
 {
 }
@@ -76,7 +76,7 @@ PlatformAudio::DeviceOpen()
 /*
  *  Close audio device
  */
-bool
+void
 PlatformAudio::DeviceClose()
 {
 }
