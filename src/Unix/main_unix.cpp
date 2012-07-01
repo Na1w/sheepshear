@@ -581,27 +581,28 @@ static void get_system_info(void)
 
 static bool load_mac_rom(void)
 {
-	uint32 rom_size, actual;
-	uint8 *rom_tmp;
-	const char *rom_path = PrefsFindString("rom");
-	int rom_fd = open(rom_path && *rom_path ? rom_path : ROM_FILE_NAME, O_RDONLY);
-	if (rom_fd < 0) {
-		rom_fd = open(ROM_FILE_NAME2, O_RDONLY);
-		if (rom_fd < 0) {
-			ErrorAlert(GetString(STR_NO_ROM_FILE_ERR));
-			return false;
-		}
+	const char *fileName = PrefsFindString("rom");
+	FILE* romHandle = fopen(fileName && *fileName ? fileName : ROM_FILE_NAME, "rb");
+	if (romHandle == NULL) {
+		bug("%s: Couldn't access %s!\n", __func__, fileName);
+		return false;
 	}
-	printf("%s", GetString(STR_READING_ROM_FILE));
-	rom_size = lseek(rom_fd, 0, SEEK_END);
-	lseek(rom_fd, 0, SEEK_SET);
-	rom_tmp = new uint8[ROM_SIZE];
-	actual = read(rom_fd, (void *)rom_tmp, ROM_SIZE);
-	close(rom_fd);
+	fseek(romHandle, 0, SEEK_END);
+	int romSize = ftell(romHandle);
+	fseek(romHandle, 0, SEEK_SET);
+
+	uint8* romBuffer = (uint8*)malloc(romSize + 1);
+	if (fread(romBuffer, sizeof(uint8), romSize, romHandle) != romSize) {
+		bug("%s: Error reading ROM file %s", __func__, fileName);
+		fclose(romHandle);
+		free(romBuffer);
+		return false;
+	}
+	fclose(romHandle);
 
 	// Decode Mac ROM
-	if (!DecodeROM(rom_tmp, actual, ROMBaseHost)) {
-		if (rom_size != 4*1024*1024) {
+	if (!DecodeROM(romBuffer, romSize, ROMBaseHost)) {
+		if (romSize != 4*1024*1024) {
 			ErrorAlert(GetString(STR_ROM_SIZE_ERR));
 			return false;
 		} else {
@@ -609,7 +610,7 @@ static bool load_mac_rom(void)
 			return false;
 		}
 	}
-	delete[] rom_tmp;
+	free(romBuffer);
 	return true;
 }
 

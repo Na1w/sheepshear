@@ -21,9 +21,13 @@
 
 
 #include "sysdeps.h"
+
 #include "cpu_emulation.h"
 #include "macos_util.h"
 #include "rom_toolbox.h"
+
+#include <stdio.h>
+
 
 #define DEBUG 0
 #include "debug.h"
@@ -107,17 +111,20 @@ DecodeROM(uint8 *data, uint32 size, uint8 *result)
 {
 	if (size == ROM_SIZE) {
 		// Plain ROM image
-		memcpy(result, data, ROM_SIZE);
+		D(bug("%s: Plain ROM image\n", __func__));
+		memcpy(result, data, size);
 		return true;
 	} else if (strncmp((char *)data, "<CHRP-BOOT>", 11) == 0) {
 		// CHRP compressed ROM image
+		D(bug("%s: CHRP compressed ROM image\n", __func__));
 		uint32 imageOffset;
-		uint32 imageSize;
+		uint32 imageSize = size;
 		bool decodeSuccess = false;
 
 		char *s = strstr((char *)data, "constant lzss-offset");
 		if (s != NULL) {
 			// Probably a plain LZSS compressed ROM image
+			D(bug("%s: LZSS compressed ROM image\n", __func__));
 			if (sscanf(s - 7, "%06x", &imageOffset) == 1) {
 				s = strstr((char *)data, "constant lzss-size");
 				if (s != NULL && (sscanf(s - 7, "%06x", &imageSize) == 1))
@@ -125,6 +132,7 @@ DecodeROM(uint8 *data, uint32 size, uint8 *result)
 			}
 		} else {
 			// Probably a MacOS 9.2.x ROM image
+			D(bug("%s: MacOS 9.2.x ROM image\n", __func__));
 			s = strstr((char *)data, "constant parcels-offset");
 			if (s != NULL) {
 				if (sscanf(s - 7, "%06x", &imageOffset) == 1) {
@@ -161,28 +169,36 @@ DecodeROM(uint8 *data, uint32 size, uint8 *result)
 bool
 GetROMInfo(const char* fileName, uint32 item, char* result)
 {
-	int romHandle = open(fileName, O_RDONLY);
-	if (romHandle < 0) {
+	// Load file into buffer
+	FILE* romHandle = fopen(fileName, "rb");
+	if (romHandle == NULL) {
 		bug("%s: Couldn't access %s!\n", __func__, fileName);
 		return false;
 	}
+	fseek(romHandle, 0, SEEK_END);
+	int romSize = ftell(romHandle);
+	fseek(romHandle, 0, SEEK_SET);
 
-	uint32 romSize = lseek(romHandle, 0, SEEK_END);
-	lseek(romHandle, 0, SEEK_SET);
-	uint8 *romBuffer = new uint8[ROM_SIZE];
-	uint32 actualSize = read(romHandle, (void *)romBuffer, ROM_SIZE);
-	close(romHandle);
-
-	// Decode Mac ROM
-	uint8 *decodedROM = (uint8*)malloc(ROM_AREA_SIZE);
-	if (!DecodeROM(romBuffer, actualSize, decodedROM)) {
-		bug("%s: Invalid Mac ROM! (%s)\n", __func__, fileName);
-		free(decodedROM);
-		delete[] romBuffer;
+	uint8* romBuffer = (uint8*)malloc(romSize + 1);
+	if (fread(romBuffer, sizeof(uint8), romSize, romHandle) != romSize) {
+		bug("%s: Error reading ROM file %s", __func__, fileName);
+		fclose(romHandle);
+		free(romBuffer);
 		sprintf(result, "invalid");
 		return false;
 	}
-	delete[] romBuffer;
+	fclose(romHandle);
+
+	// Decode Mac ROM
+	uint8* decodedROM = (uint8*)malloc(ROM_AREA_SIZE);
+	if (!DecodeROM(romBuffer, romSize, decodedROM)) {
+		bug("%s: Invalid Mac ROM! (%s)\n", __func__, fileName);
+		free(decodedROM);
+		free(romBuffer);
+		sprintf(result, "invalid");
+		return false;
+	}
+	free(romBuffer);
 
 	int length = 0;
 	memset(result, ' ', ROM_INFO_FIELD_SIZE);
