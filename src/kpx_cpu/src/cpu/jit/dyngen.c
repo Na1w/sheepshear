@@ -1158,6 +1158,7 @@ int load_object(const char *filename, FILE *outfile)
         rel->r_offset = *(uint32_t *)ext_rel->r_vaddr;
         rel->r_type = *(uint16_t *)ext_rel->r_type;
     }
+    free(coff_relocs);
     return 0;
 }
 
