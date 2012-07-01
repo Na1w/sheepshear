@@ -695,8 +695,10 @@ void SheepShear::load_rom(void)
 			memcpy(ROMBaseHost, rom, ROM_SIZE);
 			delete[] rom;
 			return;
-		} else
+		} else {
+			delete[] rom;
 			throw file_open_error();
+		}
 	}
 
 	printf(GetString(STR_READING_ROM_FILE));
