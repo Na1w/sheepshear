@@ -884,9 +884,11 @@ int load_object(const char *filename, FILE *outfile)
         size_t nf, nd = 256;
         char *demangled_name, *func_name;
         if ((demangled_name = malloc(nd)) == NULL)
-            return -1;
-        if ((func_name = malloc(nf = nd)) == NULL)
-            return -1;
+          return -1;
+        if ((func_name = malloc(nf = nd)) == NULL) {
+          free(demangled_name);
+          return -1;
+        }
 
         for(i = 0, sym = symtab; i < nb_syms; i++, sym++) {
             const char *name;
