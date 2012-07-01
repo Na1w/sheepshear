@@ -914,6 +914,7 @@ int load_object(const char *filename, FILE *outfile)
                 fprintf(outfile, "#endif\n");
             }
         }
+        free(func_name);
     }
     return 0;
 }
