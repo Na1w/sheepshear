@@ -8,8 +8,9 @@
 #
 #####################################################
 import SCons
-import platform
 import os
+import platform
+import sys
 
 machineOS = platform.system()
 machineCPU = platform.machine()
@@ -43,8 +44,15 @@ if machineOS in ('Linux', 'FreeBSD'):
 	env.ParseConfig('pkg-config --cflags --libs xext')
 	env.ParseConfig('pkg-config --cflags --libs xxf86dga')
 	env.ParseConfig('pkg-config --cflags --libs xxf86vm')
+elif machineOS in ('Darwin'):
+	print "TODO: MacOS X Support"
+	sys.exit(1)
+elif machineOS in ('Haiku'):
+	print "TODO: Haiku Support"
+	sys.exit(1)
 else:
 	print "Unknown operating system!"
+	sys.exit(1)
 
 env.Append(CPPDEFINES = cppdefines)
 env.Program('SheepShear', system_code + driver_code + ppc_cpu_code + platform_driver_code)
