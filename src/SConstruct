@@ -36,7 +36,7 @@ ppc_cpu_code = Glob('./kpx_cpu/src/cpu/ppc/*.cpp')
 
 if machineOS in ('Linux', 'FreeBSD'):
 	env.Append(CPPPATH = ['./Unix', './include/platform/Unix'])
-	env.Append(_LIBFLAGS = ['-lrt'])
+	env.Append(LIBS = ['rt'])
 	cppdefines += ['HAVE_SIGINFO_T']
 	platform_driver_code = Glob('./Unix/*.cpp')
 	env.ParseConfig('pkg-config --cflags --libs gtk+-2.0')
@@ -55,4 +55,5 @@ else:
 	sys.exit(1)
 
 env.Append(CPPDEFINES = cppdefines)
+env.Program('dyngen', ['./kpx_cpu/src/cpu/jit/dyngen.c','./kpx_cpu/src/cpu/jit/cxxdemangle.cpp'])
 env.Program('SheepShear', system_code + driver_code + ppc_cpu_code + platform_driver_code)
