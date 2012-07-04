@@ -23,8 +23,9 @@ env.Append(CPPPATH = [
 	'./slirp'])
 
 def depend(package):
-	print "Checking for " + package
+	print 'Checking for ' + package + '...'
 	env.ParseConfig('pkg-config --cflags --libs ' + package)
+	return;
 
 cppdefines = ['_REENTRANT']
 cppdefines += ['DATADIR=\\"/usr/share/SheepShear\\"']
@@ -62,3 +63,4 @@ else:
 env.Append(CPPDEFINES = cppdefines)
 env.Program('dyngen', ['./kpx_cpu/src/cpu/jit/dyngen.c','./kpx_cpu/src/cpu/jit/cxxdemangle.cpp'])
 env.Program('SheepShear', system_code + driver_code + ppc_cpu_code + platform_driver_code)
+Decider('MD5')
