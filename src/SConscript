@@ -22,8 +22,13 @@ env.Append(CPPPATH = [
 	'./kpx_cpu/src',
 	'./slirp'])
 
+def depend(package):
+	print "Checking for " + package
+	env.ParseConfig('pkg-config --cflags --libs ' + package)
+
 cppdefines = ['_REENTRANT']
 cppdefines += ['DATADIR=\\"/usr/share/SheepShear\\"']
+cppdefines += ['REAL_ADDRESSING=1']
 
 system_code = ['emul_op.cpp', 'ether.cpp', 'extfs.cpp', 'gfxaccel.cpp',
 	'macos_util.cpp', 'main.cpp', 'prefs.cpp', 'prefs_items.cpp',
@@ -39,11 +44,11 @@ if machineOS in ('Linux', 'FreeBSD'):
 	env.Append(LIBS = ['rt'])
 	cppdefines += ['HAVE_SIGINFO_T']
 	platform_driver_code = Glob('./Unix/*.cpp')
-	env.ParseConfig('pkg-config --cflags --libs gtk+-2.0')
-	env.ParseConfig('pkg-config --cflags --libs x11')
-	env.ParseConfig('pkg-config --cflags --libs xext')
-	env.ParseConfig('pkg-config --cflags --libs xxf86dga')
-	env.ParseConfig('pkg-config --cflags --libs xxf86vm')
+	depend('gtk+-2.0')
+	depend('x11')
+	depend('xext')
+	depend('xxf86dga')
+	depend('xxf86vm')
 elif machineOS in ('Darwin'):
 	print "TODO: MacOS X Support"
 	sys.exit(1)
