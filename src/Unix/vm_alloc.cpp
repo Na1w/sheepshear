@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <unistd.h>
 #include "vm_alloc.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -445,7 +446,7 @@ int vm_get_page_size(void)
 	}
 	return page_size;
 #else
-	return getpagesize();
+	return sysconf(_SC_PAGESIZE);
 #endif
 }
 

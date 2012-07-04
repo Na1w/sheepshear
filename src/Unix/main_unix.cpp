@@ -2168,7 +2168,7 @@ rti:;
 bool SheepMem::Init(void)
 {
 	// Size of a native page
-	page_size = getpagesize();
+	page_size = sysconf(_SC_PAGESIZE);
 
 	// Allocate SheepShaver globals
 	proc = base;
