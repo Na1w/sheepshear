@@ -29,12 +29,19 @@
 #error "Your compiler is not ANSI. Get a real one."
 #endif
 
+#ifndef SCONS
 #include "config.h"
-#include "user_strings_unix.h"
 
 #ifndef STDC_HEADERS
 #error "You don't have ANSI C header files."
 #endif
+
+#else
+#warning "Using SCons hack config-guess.h"
+#include "config_guess.h"
+#endif
+
+#include "user_strings_unix.h"
 
 #ifdef HAVE_UNISTD_H
 # include <sys/types.h>

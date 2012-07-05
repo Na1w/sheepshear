@@ -12,44 +12,55 @@ import os
 import platform
 import sys
 
+# Add a dependency to build system
+def depend(environment, package):
+	print 'Checking for ' + package + '...'
+	environment.ParseConfig('pkg-config --cflags --libs ' + package)
+	return;
+
 machineOS = platform.system()
 machineCPU = platform.machine()
 
+# Common build environment items
 env = Environment()
 env.Append(CPPPATH = [
-	'./include',
-	'./kpx_cpu/include',
-	'./kpx_cpu/src',
-	'./slirp'])
-
-def depend(package):
-	print 'Checking for ' + package + '...'
-	env.ParseConfig('pkg-config --cflags --libs ' + package)
-	return;
+	'#/src/include',
+	'#/src/kpx_cpu/include',
+	'#/src/kpx_cpu/src',
+	'#/src/slirp',
+	'#/build-release'])
 
 cppdefines = ['_REENTRANT']
 cppdefines += ['DATADIR=\\"/usr/share/SheepShear\\"']
 cppdefines += ['REAL_ADDRESSING=1']
 
-system_code = ['emul_op.cpp', 'ether.cpp', 'extfs.cpp', 'gfxaccel.cpp',
-	'macos_util.cpp', 'main.cpp', 'prefs.cpp', 'prefs_items.cpp',
-	'rom_patches.cpp', 'rom_toolbox.cpp', 'rsrc_patches.cpp',
-	'./kpx_cpu/sheepshaver_glue.cpp', 'thunks.cpp', 'user_strings.cpp']
-driver_code = ['adb.cpp', 'audio.cpp', 'cdrom.cpp', 'disk.cpp',
-	'name_registry.cpp', 'scsi.cpp', 'serial.cpp', 'sony.cpp',
-	'timer.cpp', 'video.cpp', 'xpram.cpp']
-ppc_cpu_code = Glob('./kpx_cpu/src/cpu/ppc/*.cpp')
+# Disable autoconf tools
+cppdefines += ['SCONS']
+
+# Common source code
+source_code = Glob('#/src/*.cpp')
+source_code += Glob('#/src/slirp/*.c')
+
+# TODO: Only non-jit for the moment
+cpu_code = ['#/src/kpx_cpu/src/mathlib/ieeefp.cpp', '#/src/kpx_cpu/src/mathlib/mathlib.cpp',
+	'#/src/kpx_cpu/src/cpu/ppc/ppc-cpu.cpp', '#/src/kpx_cpu/src/cpu/ppc/ppc-decode.cpp',
+	'#/src/kpx_cpu/src/cpu/ppc/ppc-execute.cpp', '#/src/kpx_cpu/src/cpu/ppc/ppc-translate.cpp',
+	'#/src/kpx_cpu/src/utils/utils-cpuinfo.cpp', '#/src/kpx_cpu/sheepshaver_glue.cpp']
 
 if machineOS in ('Linux', 'FreeBSD'):
-	env.Append(CPPPATH = ['./Unix', './include/platform/Unix'])
+	cppdefines += ['HAVE_SIGINFO_T']
+	env.Append(CPPPATH = ['#src/Unix', '#/src/include/platform/Unix'])
 	env.Append(LIBS = ['rt'])
 	cppdefines += ['HAVE_SIGINFO_T']
-	platform_driver_code = Glob('./Unix/*.cpp')
-	depend('gtk+-2.0')
-	depend('x11')
-	depend('xext')
-	depend('xxf86dga')
-	depend('xxf86vm')
+	source_code += Glob('#/src/Unix/*.cpp')
+	source_code += Glob('#/src/Unix/*.c')
+	source_code += Glob('#/src/Unix/Linux/*.cpp')
+	source_code += Glob('#/src/dummy/prefs_dummy.cpp')
+	depend(env, 'gtk+-2.0')
+	depend(env, 'x11')
+	depend(env, 'xext')
+	depend(env, 'xxf86dga')
+	depend(env, 'xxf86vm')
 elif machineOS in ('Darwin'):
 	print "TODO: MacOS X Support"
 	sys.exit(1)
@@ -61,6 +72,11 @@ else:
 	sys.exit(1)
 
 env.Append(CPPDEFINES = cppdefines)
-env.Program('dyngen', ['./kpx_cpu/src/cpu/jit/dyngen.c','./kpx_cpu/src/cpu/jit/cxxdemangle.cpp'])
-env.Program('SheepShear', system_code + driver_code + ppc_cpu_code + platform_driver_code)
+ppc_cpu_impl = env.Command('ppc-execute-impl.cpp', '#/src/kpx_cpu/src/cpu/ppc/ppc-decode.cpp',
+	'$CC -E $_CPPINCFLAGS -DGENEXEC $SOURCE | /usr/bin/perl src/kpx_cpu/src/cpu/ppc/genexec.pl > $TARGET')
+
+dyngen = env.Program('dyngen', ['./kpx_cpu/src/cpu/jit/dyngen.c','./kpx_cpu/src/cpu/jit/cxxdemangle.cpp'])
+#env.Command('src-list.txt', dyngen, '$SOURCE $SRCGEN_ARGS > $TARGET')
+sheepshear = env.Program('SheepShear', source_code + cpu_code)
+Depends(sheepshear, ppc_cpu_impl)
 Decider('MD5')
