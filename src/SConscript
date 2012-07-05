@@ -34,9 +34,6 @@ cppdefines = ['_REENTRANT']
 cppdefines += ['DATADIR=\\"/usr/share/SheepShear\\"']
 cppdefines += ['REAL_ADDRESSING=1']
 
-# Disable autoconf tools
-cppdefines += ['SCONS']
-
 # Common source code
 source_code = Glob('#/src/*.cpp')
 source_code += Glob('#/src/slirp/*.c')
