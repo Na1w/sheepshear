@@ -4,9 +4,6 @@
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 
-/* Define if using a PowerPC CPU emulator. */
-#define EMULATED_PPC 1
-
 /* Define to enable dyngen engine */
 /* #undef ENABLE_DYNGEN */
 
@@ -16,9 +13,6 @@
 /* Define if using Linux fbdev extension. */
 #define ENABLE_FBDEV_DGA 1
 
-/* Define if using GTK. */
-#define ENABLE_GTK 1
-
 /* Define if using "mon". */
 /* #undef ENABLE_MON */
 
@@ -27,12 +21,6 @@
 
 /* Define if using video enabled on SEGV signals. */
 #define ENABLE_VOSF 1
-
-/* Define if using XFree86 DGA extension. */
-#define ENABLE_XF86_DGA 1
-
-/* Define if using XFree86 DGA extension. */
-#define ENABLE_XF86_VIDMODE 1
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #define HAVE_ARPA_INET_H 1
