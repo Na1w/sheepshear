@@ -2540,7 +2540,7 @@ static void mach_set_thread_state(sigsegv_info_t *SIP)
 sigsegv_address_t sigsegv_get_fault_address(sigsegv_info_t *SIP)
 {
 #ifdef HAVE_MACH_EXCEPTIONS
-#ifdef EMULATED_PPC
+#if !defined(__powerpc__) /* Emulated PowerPC */
 	static int use_fast_path = -1;
 	if (use_fast_path != 1 && !SIP->has_exc_state) {
 		mach_get_exception_state(SIP);
@@ -2569,7 +2569,7 @@ sigsegv_address_t sigsegv_get_fault_address(sigsegv_info_t *SIP)
 sigsegv_address_t sigsegv_get_fault_instruction_address(sigsegv_info_t *SIP)
 {
 #ifdef HAVE_MACH_EXCEPTIONS
-#ifdef EMULATED_PPC
+#if !defined(__powerpc__) /* Emulated PowerPC */
 	if (!SIP->has_thr_state) {
 		mach_get_thread_state(SIP);
 

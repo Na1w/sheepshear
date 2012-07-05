@@ -96,12 +96,12 @@
 
 // Always use Real Addressing mode on native architectures
 // Otherwise, use Direct Addressing mode if NATMEM_OFFSET is set
-#if !defined(EMULATED_PPC)
-#define REAL_ADDRESSING 1
-#include "ppc_asm.tmpl"
+#if defined(__powerpc__) /* Native PowerPC */
+# define REAL_ADDRESSING 1
+# include "ppc_asm.tmpl"
 #elif defined(NATMEM_OFFSET)
-#define DIRECT_ADDRESSING 1
-#else
+# define DIRECT_ADDRESSING 1
+#else /* Emulated PowerPC */
 #define REAL_ADDRESSING 1
 #endif
 
@@ -110,7 +110,11 @@
 
 #define POWERPC_ROM 1
 
-#if EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
+// Mac ROM is write protected
+#define ROM_IS_WRITE_PROTECTED 1
+#define USE_SCRATCHMEM_SUBTERFUGE 0
+#else /* Emulated PowerPC */
 // Mac ROM is write protected when banked memory is used
 #if REAL_ADDRESSING || DIRECT_ADDRESSING
 # define ROM_IS_WRITE_PROTECTED 0
@@ -134,10 +138,6 @@
 #if defined(__i386__) || defined(__x86_64__)
 #define DYNGEN_ASM_OPTS 1
 #endif
-#else
-// Mac ROM is write protected
-#define ROM_IS_WRITE_PROTECTED 1
-#define USE_SCRATCHMEM_SUBTERFUGE 0
 #endif
 
 // Data types

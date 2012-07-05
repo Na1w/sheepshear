@@ -174,7 +174,7 @@ const uint32 SIG_STACK_SIZE = 0x10000;		// Size of signal stack
 
 
 // Global variables (exported)
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 void *TOC = NULL;		// Pointer to Thread Local Storage (r2)
 void *R13 = NULL;		// Pointer to .sdata section (r13 under Linux)
 #endif
@@ -223,9 +223,7 @@ static pthread_t emul_thread;				// MacOS thread
 
 static bool ready_for_signals = false;		// Handler installed, signals can be sent
 
-#if EMULATED_PPC
-static uintptr sig_stack = 0;				// Stack for PowerPC interrupt routine
-#else
+#if defined(__powerpc__) /* Native PowerPC */
 static struct sigaction sigusr2_action;		// Interrupt signal (of emulator thread)
 static struct sigaction sigsegv_action;		// Data access exception signal (of emulator thread)
 static struct sigaction sigill_action;		// Illegal instruction signal (of emulator thread)
@@ -234,6 +232,8 @@ static stack_t extra_stack;					// Stack for SIGSEGV inside interrupt handler
 static bool emul_thread_fatal = false;		// Flag: MacOS thread crashed, tick thread shall dump debug output
 static sigregs sigsegv_regs;				// Register dump when crashed
 static const char *crash_reason = NULL;		// Reason of the crash (SIGSEGV, SIGBUS, SIGILL)
+#else /* Emulated PowerPC */
+static uintptr sig_stack = 0;				// Stack for PowerPC interrupt routine
 #endif
 
 static rpc_connection_t *gui_connection = NULL;	// RPC connection to the GUI
@@ -253,21 +253,21 @@ static void Quit(void);
 static void *emul_func(void *arg);
 static void *nvram_func(void *arg);
 static void *tick_func(void *arg);
-#if EMULATED_PPC
-extern void emul_ppc(uint32 start);
-extern void init_emul_ppc(void);
-extern void exit_emul_ppc(void);
-sigsegv_return_t sigsegv_handler(sigsegv_info_t *sip);
-#else
+#if defined(__powerpc__) /* Native PowerPC */
 extern "C" void sigusr2_handler_init(int sig, siginfo_t *sip, void *scp);
 extern "C" void sigusr2_handler(int sig, siginfo_t *sip, void *scp);
 static void sigsegv_handler(int sig, siginfo_t *sip, void *scp);
 static void sigill_handler(int sig, siginfo_t *sip, void *scp);
+#else /* Emulated PowerPC */
+extern void emul_ppc(uint32 start);
+extern void init_emul_ppc(void);
+extern void exit_emul_ppc(void);
+sigsegv_return_t sigsegv_handler(sigsegv_info_t *sip);
 #endif
 
 
 // From asm_linux.S
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 extern "C" void *get_sp(void);
 extern "C" void *get_r2(void);
 extern "C" void set_r2(void *);
@@ -285,11 +285,10 @@ extern void paranoia_check(void);
 #endif
 
 
-#if EMULATED_PPC
+#if !defined(__powerpc__) /* Emulated PowerPC */
 /*
  *  Return signal stack base
  */
-
 uintptr SignalStackBase(void)
 {
 	return sig_stack + SIG_STACK_SIZE;
@@ -299,7 +298,6 @@ uintptr SignalStackBase(void)
 /*
  *  Atomic operations
  */
-
 #if HAVE_SPINLOCKS
 static spinlock_t atomic_ops_lock = SPIN_LOCK_UNLOCKED;
 #else
@@ -339,16 +337,17 @@ int atomic_or(int *var, int v)
 /*
  *  Memory management helpers
  */
-
 static inline uint8 *vm_mac_acquire(uint32 size)
 {
 	return (uint8 *)vm_acquire(size);
 }
 
+
 static inline int vm_mac_acquire_fixed(uint32 addr, uint32 size)
 {
 	return vm_acquire_fixed(Mac2HostAddr(addr), size);
 }
+
 
 static inline int vm_mac_release(uint32 addr, uint32 size)
 {
@@ -359,7 +358,6 @@ static inline int vm_mac_release(uint32 addr, uint32 size)
 /*
  *  Main program
  */
-
 static void usage(const char *prg_name)
 {
 	printf("Usage: %s [OPTION...]\n", prg_name);
@@ -368,6 +366,7 @@ static void usage(const char *prg_name)
 	PrefsPrintUsage();
 	exit(0);
 }
+
 
 static bool valid_vmdir(const char *path)
 {
@@ -384,9 +383,10 @@ static bool valid_vmdir(const char *path)
 	return false;
 }
 
+
 static void get_system_info(void)
 {
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 	FILE *proc_file;
 #endif
 
@@ -395,7 +395,7 @@ static void get_system_info(void)
 	BusClockSpeed = 100000000;	// Default: 100MHz
 	TimebaseSpeed =  25000000;	// Default:  25MHz
 
-#if EMULATED_PPC
+#if !defined(__powerpc__) /* Emulated PowerPC */
 	PVR = 0x000c0000;			// Default: 7400 (with AltiVec)
 #elif defined(__APPLE__) && defined(__MACH__)
 	proc_file = popen("ioreg -c IOPlatformDevice", "r");
@@ -614,10 +614,12 @@ static bool load_mac_rom(void)
 	return true;
 }
 
+
 static bool install_signal_handlers(void)
 {
 	char str[256];
-#if !EMULATED_PPC
+	
+#if defined(__powerpc__) /* Native PowerPC */
 	// Create and install stacks for signal handlers
 	sig_stack.ss_sp = malloc(SIG_STACK_SIZE);
 	D(bug("Signal stack at %p\n", sig_stack.ss_sp));
@@ -646,9 +648,9 @@ static bool install_signal_handlers(void)
 	sigaddset(&sigsegv_action.sa_mask, SIGUSR2);
 	sigsegv_action.sa_sigaction = sigsegv_handler;
 	sigsegv_action.sa_flags = SA_ONSTACK | SA_SIGINFO;
-#ifdef HAVE_SIGNAL_SA_RESTORER
+	#ifdef HAVE_SIGNAL_SA_RESTORER
 	sigsegv_action.sa_restorer = NULL;
-#endif
+	#endif
 	if (sigaction(SIGSEGV, &sigsegv_action, NULL) < 0) {
 		sprintf(str, GetString(STR_SIG_INSTALL_ERR), "SIGSEGV", strerror(errno));
 		ErrorAlert(str);
@@ -659,7 +661,7 @@ static bool install_signal_handlers(void)
 		ErrorAlert(str);
 		return false;
 	}
-#else
+#else /* Emulated PowerPC */
 	// Install SIGSEGV handler for CPU emulator
 	if (!sigsegv_install_handler(sigsegv_handler)) {
 		sprintf(str, GetString(STR_SIG_INSTALL_ERR), "SIGSEGV", strerror(errno));
@@ -705,6 +707,7 @@ static bool init_sdl()
 }
 #endif
 
+
 int main(int argc, char **argv)
 {
 	char str[256];
@@ -720,7 +723,7 @@ int main(int argc, char **argv)
 		PROGRAM_VERSION_MAJOR, PROGRAM_VERSION_MINOR);
 	printf("%s %s\n", GetString(STR_ABOUT_TEXT1), GetString(STR_ABOUT_TEXT2));
 
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 #ifdef SYSTEM_CLOBBERS_R2
 	// Get TOC pointer
 	TOC = get_r2();
@@ -845,7 +848,7 @@ int main(int argc, char **argv)
 		if (!PrefsEditor())
 			goto quit;
 
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 	// Check some things
 	paranoia_check();
 #endif
@@ -880,7 +883,7 @@ int main(int argc, char **argv)
 		goto quit;
 	}
 	dr_cache_area_mapped = true;
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 	if (vm_protect((char *)DR_CACHE_BASE, DR_CACHE_SIZE, VM_PAGE_READ | VM_PAGE_WRITE | VM_PAGE_EXECUTE) < 0) {
 		sprintf(str, GetString(STR_DR_CACHE_MMAP_ERR), strerror(errno));
 		ErrorAlert(str);
@@ -946,7 +949,7 @@ int main(int argc, char **argv)
 		RAMBaseHost = Mac2HostAddr(RAMBase);
 #endif
 	}
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 	if (vm_protect(RAMBaseHost, RAMSize, VM_PAGE_READ | VM_PAGE_WRITE | VM_PAGE_EXECUTE) < 0) {
 		sprintf(str, GetString(STR_RAM_MMAP_ERR), strerror(errno));
 		ErrorAlert(str);
@@ -971,7 +974,7 @@ int main(int argc, char **argv)
 		ROMBase = ROM_BASE;
 		ROMBaseHost = Mac2HostAddr(ROMBase);
 	}
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 	if (vm_protect(ROMBaseHost, ROM_AREA_SIZE, VM_PAGE_READ | VM_PAGE_WRITE | VM_PAGE_EXECUTE) < 0) {
 		sprintf(str, GetString(STR_ROM_MMAP_ERR), strerror(errno));
 		ErrorAlert(str);
@@ -996,7 +999,7 @@ int main(int argc, char **argv)
 	D(bug("Initialization complete\n"));
 
 	// Clear caches (as we loaded and patched code) and write protect ROM
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 	flush_icache_range(ROMBase, ROMBase + ROM_AREA_SIZE);
 #endif
 	vm_protect(ROMBaseHost, ROM_AREA_SIZE, VM_PAGE_READ | VM_PAGE_EXECUTE);
@@ -1012,7 +1015,7 @@ int main(int argc, char **argv)
 	nvram_thread_active = (pthread_create(&nvram_thread, NULL, nvram_func, NULL) == 0);
 	D(bug("NVRAM thread installed (%ld)\n", nvram_thread));
 
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 	// Install SIGILL handler
 	sigemptyset(&sigill_action.sa_mask);	// Block interrupts during ILL handling
 	sigaddset(&sigill_action.sa_mask, SIGUSR2);
@@ -1028,7 +1031,7 @@ int main(int argc, char **argv)
 	}
 #endif
 
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 	// Install interrupt signal handler
 	sigemptyset(&sigusr2_action.sa_mask);
 	sigusr2_action.sa_sigaction = sigusr2_handler_init;
@@ -1057,10 +1060,9 @@ quit:
 /*
  *  Cleanup and quit
  */
-
 static void Quit(void)
 {
-#if EMULATED_PPC
+#if !defined(__powerpc__) /* Emulated PowerPC */
 	// Exit PowerPC emulation
 	exit_emul_ppc();
 #endif
@@ -1079,7 +1081,7 @@ static void Quit(void)
 		pthread_join(nvram_thread, NULL);
 	}
 
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 	// Uninstall SIGSEGV and SIGBUS handlers
 	sigemptyset(&sigsegv_action.sa_mask);
 	sigsegv_action.sa_handler = SIG_DFL;
@@ -1158,7 +1160,6 @@ static void Quit(void)
 /*
  *  Initialize Kernel Data segments
  */
-
 static bool kernel_data_init(void)
 {
 	char str[256];
@@ -1197,7 +1198,6 @@ fail_shmget:
 /*
  *  Deallocate Kernel Data segments
  */
-
 static void kernel_data_exit(void)
 {
 	if (kernel_area >= 0) {
@@ -1212,8 +1212,7 @@ static void kernel_data_exit(void)
 /*
  *  Jump into Mac ROM, start 680x0 emulator
  */
-
-#if EMULATED_PPC
+#if !defined(__powerpc__) /* Emulated PowerPC */
 void jump_to_rom(uint32 entry)
 {
 	init_emul_ppc();
@@ -1225,7 +1224,6 @@ void jump_to_rom(uint32 entry)
 /*
  *  Emulator thread function
  */
-
 static void *emul_func(void *arg)
 {
 	// We're now ready to receive signals
@@ -1236,9 +1234,9 @@ static void *emul_func(void *arg)
 
 	// Jump to ROM boot routine
 	D(bug("Jumping to ROM\n"));
-#if EMULATED_PPC
+#if !defined(__powerpc__) /* Emulated PowerPC */
 	jump_to_rom(ROMBase + 0x310000);
-#else
+#else /* Native PowerPC */
 	jump_to_rom(ROMBase + 0x310000, (uint32)emulator_data);
 #endif
 	D(bug("Returned from ROM\n"));
@@ -1249,13 +1247,12 @@ static void *emul_func(void *arg)
 }
 
 
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 /*
  *  Execute 68k subroutine (must be ended with RTS)
  *  This must only be called by the emul_thread when in EMUL_OP mode
  *  r->a[7] is unused, the routine runs on the caller's stack
  */
-
 void Execute68k(uint32 pc, M68kRegisters *r)
 {
 #if SAFE_EXEC_68K
@@ -1272,7 +1269,6 @@ void Execute68k(uint32 pc, M68kRegisters *r)
  *  Execute 68k A-Trap from EMUL_OP routine
  *  r->a[7] is unused, the routine runs on the caller's stack
  */
-
 void Execute68kTrap(uint16 trap, M68kRegisters *r)
 {
 	uint16 proc[2] = {trap, M68K_RTS};
@@ -1284,13 +1280,12 @@ void Execute68kTrap(uint16 trap, M68kRegisters *r)
 /*
  *  Quit emulator (cause return from jump_to_rom)
  */
-
 void QuitEmulator(void)
 {
-#if EMULATED_PPC
-	Quit();
-#else
+#if defined(__powerpc__) /* Native PowerPC */
 	quit_emulator();
+#else /* Emulated PowerPC */
+	Quit();
 #endif
 }
 
@@ -1298,7 +1293,6 @@ void QuitEmulator(void)
 /*
  *  Dump 68k registers
  */
-
 void Dump68kRegs(M68kRegisters *r)
 {
 	// Display 68k registers
@@ -1322,15 +1316,14 @@ void Dump68kRegs(M68kRegisters *r)
 /*
  *  Make code executable
  */
-
 void MakeExecutable(int dummy, uint32 start, uint32 length)
 {
 	if ((start >= ROMBase) && (start < (ROMBase + ROM_SIZE)))
 		return;
-#if EMULATED_PPC
-	FlushCodeCache(start, start + length);
-#else
+#if defined(__powerpc__) /* Native PowerPC */
 	flush_icache_range(start, start + length);
+#else /* Emulated PowerPC */
+	FlushCodeCache(start, start + length);
 #endif
 }
 
@@ -1338,7 +1331,6 @@ void MakeExecutable(int dummy, uint32 start, uint32 length)
 /*
  *  NVRAM watchdog thread (saves NVRAM every minute)
  */
-
 static void nvram_watchdog(void)
 {
 	if (memcmp(last_xpram, XPRAM, XPRAM_SIZE)) {
@@ -1362,7 +1354,6 @@ static void *nvram_func(void *arg)
 /*
  *  60Hz thread (really 60.15Hz)
  */
-
 static void *tick_func(void *arg)
 {
 	int tick_counter = 0;
@@ -1381,7 +1372,7 @@ static void *tick_func(void *arg)
 			next = GetTicks_usec();
 		ticks++;
 
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 		// Did we crash?
 		if (emul_thread_fatal) {
 
@@ -1447,7 +1438,6 @@ static void *tick_func(void *arg)
 /*
  *  Pthread configuration
  */
-
 void Set_pthread_attr(pthread_attr_t *attr, int priority)
 {
 #ifdef HAVE_PTHREADS
@@ -1480,7 +1470,6 @@ void Set_pthread_attr(pthread_attr_t *attr, int priority)
 /*
  *  Mutexes
  */
-
 #ifdef HAVE_PTHREADS
 
 struct B2_mutex {
@@ -1559,8 +1548,7 @@ void B2_delete_mutex(B2_mutex *mutex)
 /*
  *  Trigger signal USR2 from another thread
  */
-
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 void TriggerInterrupt(void)
 {
 	if (ready_for_signals) {
@@ -1574,7 +1562,6 @@ void TriggerInterrupt(void)
 /*
  *  Interrupt flags (must be handled atomically!)
  */
-
 volatile uint32 InterruptFlags = 0;
 
 void SetInterruptFlag(uint32 flag)
@@ -1591,13 +1578,12 @@ void ClearInterruptFlag(uint32 flag)
 /*
  *  Disable interrupts
  */
-
 void DisableInterrupt(void)
 {
-#if EMULATED_PPC
-	WriteMacInt32(XLM_IRQ_NEST, int32(ReadMacInt32(XLM_IRQ_NEST)) + 1);
-#else
+#if defined(__powerpc__) /* Native PowerPC */
 	atomic_add((int *)XLM_IRQ_NEST, 1);
+#else /* Emulated PowerPC */
+	WriteMacInt32(XLM_IRQ_NEST, int32(ReadMacInt32(XLM_IRQ_NEST)) + 1);
 #endif
 }
 
@@ -1605,13 +1591,12 @@ void DisableInterrupt(void)
 /*
  *  Enable interrupts
  */
-
 void EnableInterrupt(void)
 {
-#if EMULATED_PPC
-	WriteMacInt32(XLM_IRQ_NEST, int32(ReadMacInt32(XLM_IRQ_NEST)) - 1);
-#else
+#if defined(__powerpc__) /* Native PowerPC */
 	atomic_add((int *)XLM_IRQ_NEST, -1);
+#else /* Emulated PowerPC */
+	WriteMacInt32(XLM_IRQ_NEST, int32(ReadMacInt32(XLM_IRQ_NEST)) - 1);
 #endif
 }
 
@@ -1619,8 +1604,7 @@ void EnableInterrupt(void)
 /*
  *  USR2 handler
  */
-
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 void sigusr2_handler(int sig, siginfo_t *sip, void *scp)
 {
 	machine_regs *r = MACHINE_REGISTERS(scp);
@@ -1725,7 +1709,7 @@ void sigusr2_handler(int sig, siginfo_t *sip, void *scp)
  *  SIGSEGV handler
  */
 
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 static void sigsegv_handler(int sig, siginfo_t *sip, void *scp)
 {
 	machine_regs *r = MACHINE_REGISTERS(scp);
@@ -2182,7 +2166,7 @@ bool SheepMem::Init(void)
 	if (vm_protect(Mac2HostAddr(zero_page), page_size, VM_PAGE_READ) < 0)
 		return false;
 
-#if EMULATED_PPC
+#if !defined(__powerpc__) /* Emulated PowerPC */
 	// Allocate alternate stack for PowerPC interrupt routine
 	sig_stack = base + size;
 	if (vm_mac_acquire_fixed(sig_stack, SIG_STACK_SIZE) < 0)
@@ -2199,7 +2183,7 @@ void SheepMem::Exit(void)
 		// Delete SheepShaver globals
 		vm_mac_release(base, size);
 
-#if EMULATED_PPC
+#if f
 		// Delete alternate stack for PowerPC interrupt routine
 		vm_mac_release(sig_stack, SIG_STACK_SIZE);
 #endif

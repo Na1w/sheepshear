@@ -21,8 +21,8 @@
 #ifndef SIGREGS_H
 #define SIGREGS_H
 
-#ifndef EMULATED_PPC
 
+#if defined(__powerpc__) /* Native PowerPC */
 // Common representation of machine registers
 struct sigregs {
 	uint32 nip;
