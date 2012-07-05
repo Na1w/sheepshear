@@ -28,9 +28,6 @@
 /* Define to 1 if you have the <AvailabilityMacros.h> header file. */
 /* #undef HAVE_AVAILABILITYMACROS_H */
 
-/* Define to 1 if you have the <byteswap.h> header file. */
-#define HAVE_BYTESWAP_H 1
-
 /* Define to 1 if you have the `ceil' function. */
 #define HAVE_CEIL 1
 

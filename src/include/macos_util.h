@@ -29,11 +29,18 @@
 /*
  *  General definitions
  */
+#if defined(__APPLE__)
+#import <Carbon/Carbon.h>
+typedef uint64_t loff_t;
+#endif
 
+
+#if !defined(__APPLE__)
 struct Point {
 	int16 v;
 	int16 h;
 };
+
 
 struct Rect {
 	int16 top;
@@ -46,7 +53,6 @@ struct Rect {
 /*
  *  Queues
  */
-
 enum {	// Queue types
 	dummyType	= 0,
 	vType		= 1,
@@ -58,6 +64,8 @@ enum {	// Queue types
 	dtQType		= 7,
 	nmType		= 8
 };
+#endif /* !__APPLE__ */
+
 
 enum {	// QElem struct
 	qLink = 0,
@@ -75,7 +83,6 @@ enum {	// QHdr struct
 /*
  *  Definitions for Deferred Task Manager
  */
-
 enum {	// DeferredTask struct
 	dtFlags = 6,
 	dtAddr = 8,
@@ -87,7 +94,7 @@ enum {	// DeferredTask struct
 /*
  *  Definitions for Device Manager
  */
-
+#if !defined(__APPLE__)
 // Error codes
 enum {
 	noErr			= 0,
@@ -144,6 +151,7 @@ enum {
 	dirNFErr		= -120			/* directory not found */
 };
 
+
 // Misc constants
 enum {
 	goodbye			= -1,			/* heap being reinitialized */
@@ -183,10 +191,13 @@ enum {
 	hard20			= 1
 };
 
+
 enum {						/* Large Volume Constants */
 	kWidePosOffsetBit			= 8,
 	kMaximumBlocksIn4GB		= 0x007FFFFF
 };
+#endif /* !__APPLE__ */
+
 
 enum {	// IOParam struct
 	ioTrap = 6,
@@ -208,10 +219,12 @@ enum {	// IOParam struct
 	SIZEOF_IOParam = 50
 };
 
+
 enum {	// CntrlParam struct
 	csCode = 26,
 	csParam = 28
 };
+
 
 enum {	// DrvSts struct
 	dsTrack = 0,
@@ -232,6 +245,7 @@ enum {	// DrvSts struct
 	dsTwoMegFmt = 24
 };
 
+
 enum {	// DrvSts2 struct
 	dsDriveSize = 18,
 	dsDriveS1 = 20,
@@ -241,6 +255,7 @@ enum {	// DrvSts2 struct
 	dsDriveMisc = 28,
 	SIZEOF_DrvSts = 30
 };
+
 
 enum {	// DCtlEntry struct
 	dCtlDriver = 0,
@@ -267,11 +282,13 @@ enum {	// DCtlEntry struct
 /*
  *  Definitions for native Device Manager
  */
-
+#if !defined(__APPLE__)
 // Registry EntryID
 struct RegEntryID {
 	uint32 contents[4];
 };
+#endif
+
 
 // Command codes
 enum {
@@ -290,6 +307,7 @@ enum {
 	kResumeCommand				= 12							/* wake up sleeping driver*/
 };
 
+
 // Command kinds
 enum {
 	kSynchronousIOCommandKind	= 0x00000001,
@@ -301,7 +319,7 @@ enum {
 /* 
  *  Definitions for Mixed Mode Manager
  */
-
+#if !defined(__APPLE__)
 typedef uint32 ProcInfoType;
 typedef int8 ISAType;
 typedef uint16 RoutineFlagsType;
@@ -328,6 +346,8 @@ struct RoutineDescriptor {
 	uint16 							routineCount;				/* Number of routines in this RD */
 	RoutineRecord 					routineRecords[1];			/* The individual routines */
 };
+#endif /* !__APPLE__ */
+
 
 struct SheepRoutineDescriptor
 	: public SheepVar
@@ -351,7 +371,6 @@ struct SheepRoutineDescriptor
 extern void MacOSUtilReset(void);
 extern void Enqueue(uint32 elem, uint32 list);			// Enqueue QElem to list
 extern int FindFreeDriveNumber(int num);				// Find first free drive number, starting at "num"
-extern void MountVolume(void *fh);						// Mount volume with given file handle (see sys.h)
 extern void FileDiskLayout(loff_t size, uint8 *data, loff_t &start_byte, loff_t &real_size);	// Calculate disk image file layout given file size and first 256 data bytes
 extern uint32 FindLibSymbol(const char *lib, const char *sym);	// Find symbol in shared library
 extern void InitCallUniversalProc(void);				// Init CallUniversalProc()
@@ -359,6 +378,9 @@ extern long CallUniversalProc(void *upp, uint32 info);	// CallUniversalProc()
 extern uint32 TimeToMacTime(time_t t);					// Convert time_t value to MacOS time
 extern uint32 Mac_sysalloc(uint32 size);				// Allocate block in MacOS system heap zone
 extern void Mac_sysfree(uint32 addr);					// Release block occupied by the nonrelocatable block p
+extern void MountVolume(void *fh);						// Mount volume with given file handle (see sys.h)
+extern int FindFreeDriveNumber(int num);				// Find first free drive number, starting at "num"
+
 
 // Construct four-character-code from string
 #define FOURCC(a,b,c,d) (((uint32)(a) << 24) | ((uint32)(b) << 16) | ((uint32)(c) << 8) | (uint32)(d))

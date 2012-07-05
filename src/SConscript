@@ -13,7 +13,7 @@ import platform
 import sys
 
 # Add a dependency to build system
-def depend(environment, package, friendly):
+def dependpkg(environment, package, friendly):
 	print 'Checking for ' + package + '...'
 	environment.ParseConfig('pkg-config --cflags --libs ' + package)
 	environment.Append(CPPDEFINES = ['ENABLE_' + friendly])
@@ -53,6 +53,7 @@ cpu_code = ['#/src/kpx_cpu/src/mathlib/ieeefp.cpp', '#/src/kpx_cpu/src/mathlib/m
 
 if machineOS in ('Linux', 'FreeBSD'):
 	cppdefines += ['HAVE_SIGINFO_T']
+	cppdefines += ['HAVE_BYTESWAP_H']
 	env.Append(CPPPATH = ['#src/Unix', '#/src/include/platform/Unix'])
 	env.Append(LIBS = ['rt'])
 	cppdefines += ['HAVE_SIGINFO_T']
@@ -60,14 +61,21 @@ if machineOS in ('Linux', 'FreeBSD'):
 	source_code += Glob('#/src/Unix/*.c')
 	source_code += Glob('#/src/Unix/Linux/*.cpp')
 	source_code += Glob('#/src/dummy/prefs_dummy.cpp')
-	depend(env, 'gtk+-2.0', 'GTK')
-	depend(env, 'x11', 'X11')
-	depend(env, 'xext', 'XEXT')
-	depend(env, 'xxf86dga', 'XF86_DGA')
-	depend(env, 'xxf86vm', 'XF86_VIDMODE')
+	dependpkg(env, 'gtk+-2.0', 'GTK')
+	dependpkg(env, 'x11', 'X11')
+	dependpkg(env, 'xext', 'XEXT')
+	dependpkg(env, 'xxf86dga', 'XF86_DGA')
+	dependpkg(env, 'xxf86vm', 'XF86_VIDMODE')
 elif machineOS in ('Darwin'):
-	print "TODO: MacOS X Support"
-	sys.exit(1)
+	cppdefines += ['HAVE_SIGINFO_T']
+	env.Append(CPPPATH = ['#src/Unix', '#/src/include/platform/Unix'])
+	env.Append(CPPPATH = ['/Developer/SDKs/MacOSX10.6.sdk/usr/include'])
+	env.Append(LIBS = ['rt', 'X'])
+	cppdefines += ['HAVE_SIGINFO_T']
+	source_code += Glob('#/src/Unix/*.cpp')
+	source_code += Glob('#/src/Unix/*.c')
+	source_code += Glob('#/src/Unix/Linux/*.cpp')
+	source_code += Glob('#/src/dummy/prefs_dummy.cpp')
 elif machineOS in ('Haiku'):
 	print "TODO: Haiku Support"
 	sys.exit(1)
