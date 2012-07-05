@@ -16,14 +16,20 @@ import sys
 def depend(environment, package, friendly):
 	print 'Checking for ' + package + '...'
 	environment.ParseConfig('pkg-config --cflags --libs ' + package)
-	env.Append(CPPDEFINES = ['ENABLE_' + friendly])
+	environment.Append(CPPDEFINES = ['ENABLE_' + friendly])
 	return;
-
-machineOS = platform.system()
-machineCPU = platform.machine()
 
 # Common build environment items
 env = Environment()
+machineOS = platform.system()
+machineCPU = platform.machine()
+
+# Enable compiler overrides
+if os.environ.has_key('CC'):
+	env['CC'] = os.environ['CC']
+if os.environ.has_key('CXX'):
+	env['CXX'] = os.environ['CXX']
+
 env.Append(CPPPATH = [
 	'#/src/include',
 	'#/src/kpx_cpu/include',
