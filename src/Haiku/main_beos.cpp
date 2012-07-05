@@ -212,7 +212,7 @@ private:
 
 // Global variables
 SheepShear *the_app;	// Pointer to application object
-#if !EMULATED_PPC
+#if defined(__powerpc__)
 void *TOC;				// TOC pointer
 #endif
 uint32 RAMBase;			// Base address of Mac RAM
@@ -262,7 +262,7 @@ int main(int argc, char **argv)
  *  Run application
  */
 
-#if !EMULATED_PPC
+#if defined(__powerpc__)
 static asm void *get_toc(void)
 {
 	mr	r3,r2
@@ -280,7 +280,7 @@ void SheepShear::ReadyToRun(void)
 	// Get system info
 	get_system_info(&fSysInfo);
 
-#if !EMULATED_PPC
+#if defined(__powerpc__)
 	// On non-emulated we set emulator as close to host as we can
 
 	// Get TOC pointer
@@ -526,7 +526,7 @@ void SheepShear::StartEmulator(void)
 	D(bug("Initialization complete\n"));
 
 	// Clear caches (as we loaded and patched code) and write protect ROM
-#if !EMULATED_PPC
+#if defined(__powerpc__)
 	clear_caches(ROMBaseHost, ROM_AREA_SIZE, B_INVALIDATE_ICACHE | B_FLUSH_DCACHE);
 #endif
 	set_area_protection(rom_area, B_READ_AREA);
@@ -560,7 +560,7 @@ void SheepShear::StartEmulator(void)
 status_t
 SheepShear::DriverConnect()
 {
-	#if !EMULATED_PPC
+	#if defined(__powerpc__)
     sheep_fd = open("/dev/sheep", 0);
     if (sheep_fd < 0) {
         sprintf(str, GetString(STR_NO_SHEEP_DRIVER_ERR), strerror(sheep_fd), sheep_fd);
@@ -586,7 +586,7 @@ SheepShear::DriverConnect()
 void
 SheepShear::DriverDisconnect()
 {
-	#if !EMULATED_PPC
+	#if defined(__powerpc__)
     if (sheep_fd >= 0) {
         ioctl(sheep_fd, SHEEP_DOWN);
         close(sheep_fd);
@@ -743,7 +743,7 @@ status_t SheepShear::emul_func(void *arg)
 	obj->sigsegv_action.sa_userdata = arg;
 	sigaction(SIGSEGV, &obj->sigsegv_action, NULL);
 
-#if !EMULATED_PPC
+#if defined(__powerpc__)
 	// Install illegal instruction signal handler
 	sigemptyset(&obj->sigill_action.sa_mask);
 	obj->sigill_action.sa_handler = (__sighandler_t)(obj->sigill_invoc);
@@ -783,7 +783,7 @@ status_t SheepShear::emul_func(void *arg)
  *  (also contains other EMUL_RETURN and EMUL_OP routines)
  */
 
-#if EMULATED_PPC
+#if !defined(__powerpc__)
 extern void emul_ppc(uint32 start);
 extern void init_emul_ppc(void);
 void SheepShear::jump_to_rom(uint32 entry)
@@ -1092,13 +1092,28 @@ asm void SheepShear::jump_to_rom(register uint32 entry)
 #endif
 
 
-#if !EMULATED_PPC
+#if !defined(__powerpc__) /* Emulated PowerPC */
+void Execute68k(uint32 pc, M68kRegisters *r)
+{
+	// Nop
+}
+
+void Execute68kTrap(uint16 trap, M68kRegisters *r)
+{
+	// Nop
+}
+
+void QuitEmulator(void)
+{
+	// Nop
+}
+
+#else /* Native PowerPC */
 /*
  *  Execute 68k subroutine (must be ended with RTS)
  *  This must only be called by the emul_thread when in EMUL_OP mode
  *  r->a[7] is unused, the routine runs on the caller's stack
  */
-
 #if SAFE_EXEC_68K
 void execute_68k(uint32 pc, M68kRegisters *r);
 
@@ -1215,22 +1230,6 @@ asm void QuitEmulator(void)
 	lwz		r0,XLM_EMUL_RETURN_PROC
 	mtlr	r0
 	blr
-}
-#else /* EMULATED_PPC */
-
-void Execute68k(uint32 pc, M68kRegisters *r)
-{
-	// Nop
-}
-
-void Execute68kTrap(uint16 trap, M68kRegisters *r)
-{
-	// Nop
-}
-
-void QuitEmulator(void)
-{
-	// Nop
 }
 #endif
 
@@ -1411,7 +1410,8 @@ void SheepShear::sigusr1_invoc(int sig, void *arg, vregs *r)
 	((SheepShear *)arg)->sigusr1_handler(r);
 }
 
-#if !EMULATED_PPC
+
+#if defined(__powerpc__) /* Native PowerPC */
 static asm void ppc_interrupt(register uint32 entry)
 {
 	fralloc
@@ -1464,15 +1464,15 @@ void SheepShear::sigusr1_handler(vregs *r)
 	// Interrupt action depends on current run mode
 	switch (*(uint32 *)XLM_RUN_MODE) {
 
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 		case MODE_68K:
 			// 68k emulator active, trigger 68k interrupt level 1
 			*(uint16 *)(kernel_data->v[0x67c >> 2]) = 1;
 			r->cr |= kernel_data->v[0x674 >> 2];
 			break;
-#endif /* !EMULATED_PPC */
+#endif /* Native PowerPC */
 
-#if !EMULATED_PPC && INTERRUPTS_IN_NATIVE_MODE
+#if defined(__powerpc__) && INTERRUPTS_IN_NATIVE_MODE /* Native PowerPC */
 		case MODE_NATIVE:
 			// 68k emulator inactive, in nanokernel?
 			if (r->r1 != KernelDataAddr) {
@@ -1490,7 +1490,7 @@ void SheepShear::sigusr1_handler(vregs *r)
 			break;
 #endif
 
-#if !EMULATED_PPC && INTERRUPTS_IN_EMUL_OP_MODE
+#if defined(__powerpc__) && INTERRUPTS_IN_EMUL_OP_MODE /* Native PowerPC */
 		case MODE_EMUL_OP:
 			// 68k emulator active, within EMUL_OP routine, execute 68k interrupt routine directly when interrupt level is 0
 			if ((*(uint32 *)XLM_68K_R25 & 7) == 0) {
@@ -1535,10 +1535,9 @@ void SheepShear::sigusr1_handler(vregs *r)
 /*
  *  SIGSEGV handler
  */
-
 static uint32 segv_r[32];
 
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 asm void SheepShear::sigsegv_invoc(register int sig, register void *arg, register vregs *r)
 {
 	mflr	r0
@@ -1802,7 +1801,7 @@ rti:
 	r->r11 = segv_r[11];
 	r->r12 = segv_r[12];
 }
-#else /* !EMULATED_PPC */
+#else /* Native PowerPC */
 
 void
 SheepShear::sigsegv_invoc(register int sig, register void *arg, register vregs *r)
@@ -1818,7 +1817,7 @@ SheepShear::sigsegv_invoc(register int sig, register void *arg, register vregs *
  *  SIGILL handler
  */
 
-#if !EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
 asm void SheepShear::sigill_invoc(register int sig, register void *arg, register vregs *r)
 {
 	mflr	r0
@@ -2020,7 +2019,7 @@ rti:
 	r->r11 = segv_r[11];
 	r->r12 = segv_r[12];
 }
-#endif /* !EMULATED_PPC */
+#endif /* Native PowerPC */
 
 
 /*

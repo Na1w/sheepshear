@@ -21,8 +21,9 @@
 #ifndef SYSDEPS_H
 #define SYSDEPS_H
 
+
 // Do we have std namespace?
-#ifdef __POWERPC__
+#ifdef __powerpc__
 #define NO_STD_NAMESPACE
 #endif
 
@@ -41,15 +42,11 @@
 // Mass debugging, overrides DEBUG in each file
 #define USE_DEBUG_MODE 0
 
-// Are we using a PPC emulator or the real thing?
-#ifdef __POWERPC__
-# define EMULATED_PPC 0
+#if defined(__powerpc__) /* Native PowerPC */
 # define WORDS_BIGENDIAN 1
 # define SYSTEM_CLOBBERS_R2 1
 # define REAL_ADDRESSING 1
-#else
-// Not PowerPC
-# define EMULATED_PPC 1
+#else /* Emulated PowerPC */
 # undef  WORDS_BIGENDIAN
 # ifdef NATMEM_OFFSET
 #  define DIRECT_ADDRESSING 1
@@ -69,7 +66,11 @@
 
 #define POWERPC_ROM 1
 
-#if EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
+# define ROM_IS_WRITE_PROTECTED 1
+# define USE_SCRATCHMEM_SUBTERFUGE 0
+# define PPC_ENABLE_JIT 0
+#else /* Emulated PowerPC */
 // Configure PowerPC emulator
 # define PPC_REENTRANT_JIT 1
 # define PPC_CHECK_INTERRUPTS 1
@@ -84,11 +85,6 @@
 # if defined(__i386__) || defined(__x86_64__)
 #  define DYNGEN_ASM_OPTS 1
 # endif
-#else
-// Native PowerPC machine
-# define ROM_IS_WRITE_PROTECTED 1
-# define USE_SCRATCHMEM_SUBTERFUGE 0
-# define PPC_ENABLE_JIT 0
 #endif
 
 #define VAL64(a) (a ## l)
