@@ -255,9 +255,10 @@ void EmulOp(M68kRegisters *r, uint32 pc, int selector)
 			MakeExecutableTvec = FindLibSymbol("\023PrivateInterfaceLib", "\016MakeExecutable");
 			D(bug("MakeExecutable TVECT at %08x\n", MakeExecutableTvec));
 			WriteMacInt32(MakeExecutableTvec, NativeFunction(NATIVE_MAKE_EXECUTABLE));
-#if !EMULATED_PPC
+			
+			#if defined(__powerpc__) /* Native PowerPC */
 			WriteMacInt32(MakeExecutableTvec + 4, (uint32)TOC);
-#endif
+			#endif
 
 			// Patch DebugStr()
 			static const uint8 proc_template[] = {

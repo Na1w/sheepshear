@@ -57,7 +57,22 @@ extern uint32 ROMBase;			// Base address of Mac ROM
 extern uint8 *ROMBaseHost;		// Base address of Mac ROM (host address space)
 
 // Mac memory access functions
-#if EMULATED_PPC
+#if defined(__powerpc__) /* Native PowerPC */
+static inline uint32 ReadMacInt8(uint32 addr) {return *(uint8 *)addr;}
+static inline void WriteMacInt8(uint32 addr, uint32 b) {*(uint8 *)addr = b;}
+static inline uint32 ReadMacInt16(uint32 addr) {return *(uint16 *)addr;}
+static inline uint32 ReadMacInt32(uint32 addr) {return *(uint32 *)addr;}
+static inline uint64 ReadMacInt64(uint32 addr) {return *(uint64 *)addr;}
+static inline void WriteMacInt16(uint32 addr, uint32 w) {*(uint16 *)addr = w;}
+static inline void WriteMacInt32(uint32 addr, uint32 l) {*(uint32 *)addr = l;}
+static inline void WriteMacInt64(uint32 addr, uint64 ll) {*(uint64 *)addr = ll;}
+static inline uint32 Host2MacAddr(uint8 *addr) {return (uint32)addr;}
+static inline uint8 *Mac2HostAddr(uint32 addr) {return (uint8 *)addr;}
+static inline void *Mac_memset(uint32 addr, int c, size_t n) {return memset(Mac2HostAddr(addr), c, n);}
+static inline void *Mac2Host_memcpy(void *dest, uint32 src, size_t n) {return memcpy(dest, Mac2HostAddr(src), n);}
+static inline void *Host2Mac_memcpy(uint32 dest, const void *src, size_t n) {return memcpy(Mac2HostAddr(dest), src, n);}
+static inline void *Mac2Mac_memcpy(uint32 dest, uint32 src, size_t n) {return memcpy(Mac2HostAddr(dest), Mac2HostAddr(src), n);}
+#else /* Emulated PowerPC */
 #include "cpu/vm.hpp"
 static inline uint32 ReadMacInt8(uint32 addr) {return vm_read_memory_1(addr);}
 static inline void WriteMacInt8(uint32 addr, uint32 v) {vm_write_memory_1(addr, v);}
@@ -73,21 +88,6 @@ static inline void *Mac_memset(uint32 addr, int c, size_t n) {return vm_memset(a
 static inline void *Mac2Host_memcpy(void *dest, uint32 src, size_t n) {return vm_memcpy(dest, src, n);}
 static inline void *Host2Mac_memcpy(uint32 dest, const void *src, size_t n) {return vm_memcpy(dest, src, n);}
 static inline void *Mac2Mac_memcpy(uint32 dest, uint32 src, size_t n) {return vm_memcpy(dest, src, n);}
-#else
-static inline uint32 ReadMacInt8(uint32 addr) {return *(uint8 *)addr;}
-static inline void WriteMacInt8(uint32 addr, uint32 b) {*(uint8 *)addr = b;}
-static inline uint32 ReadMacInt16(uint32 addr) {return *(uint16 *)addr;}
-static inline uint32 ReadMacInt32(uint32 addr) {return *(uint32 *)addr;}
-static inline uint64 ReadMacInt64(uint32 addr) {return *(uint64 *)addr;}
-static inline void WriteMacInt16(uint32 addr, uint32 w) {*(uint16 *)addr = w;}
-static inline void WriteMacInt32(uint32 addr, uint32 l) {*(uint32 *)addr = l;}
-static inline void WriteMacInt64(uint32 addr, uint64 ll) {*(uint64 *)addr = ll;}
-static inline uint32 Host2MacAddr(uint8 *addr) {return (uint32)addr;}
-static inline uint8 *Mac2HostAddr(uint32 addr) {return (uint8 *)addr;}
-static inline void *Mac_memset(uint32 addr, int c, size_t n) {return memset(Mac2HostAddr(addr), c, n);}
-static inline void *Mac2Host_memcpy(void *dest, uint32 src, size_t n) {return memcpy(dest, Mac2HostAddr(src), n);}
-static inline void *Host2Mac_memcpy(uint32 dest, const void *src, size_t n) {return memcpy(Mac2HostAddr(dest), src, n);}
-static inline void *Mac2Mac_memcpy(uint32 dest, uint32 src, size_t n) {return memcpy(Mac2HostAddr(dest), Mac2HostAddr(src), n);}
 #endif
 
 
@@ -114,9 +114,12 @@ static inline void *Mac2Mac_memcpy(uint32 dest, uint32 src, size_t n) {return me
 struct M68kRegisters;
 extern void Execute68k(uint32, M68kRegisters *r);			// Execute 68k subroutine from EMUL_OP routine, must be ended with RTS
 extern void Execute68kTrap(uint16 trap, M68kRegisters *r);	// Execute 68k A-Trap from EMUL_OP routine
-#if EMULATED_PPC
+
+#if !defined(__powerpc__) /* Emulated PowerPC */
 extern void FlushCodeCache(uintptr start, uintptr end);		// Invalidate emulator caches
 #endif
+
 extern void ExecuteNative(int selector);					// Execute native code from EMUL_OP routine (real mode switch)
 
-#endif
+
+#endif /* CPU_EMULATION_H */

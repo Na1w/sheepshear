@@ -1120,20 +1120,8 @@ static bool patch_68k_emul(void)
 	*lp++ = htonl(POWERPC_ILLEGAL);
 	*lp = htonl(POWERPC_ILLEGAL);
 
-#if EMULATED_PPC
-	// Install EMUL_RETURN, EXEC_RETURN, EXEC_NATIVE and EMUL_OP opcodes
-	lp = (uint32 *)(ROMBaseHost + 0x380000 + (M68K_EMUL_RETURN << 3));
-	*lp++ = htonl(POWERPC_EMUL_OP);
-	*lp++ = htonl(0x4bf66e80);							// b	0x366084
-	*lp++ = htonl(POWERPC_EMUL_OP | 1);
-	*lp++ = htonl(0x4bf66e78);							// b	0x366084
-	*lp++ = htonl(POWERPC_EMUL_OP | 2);
-	*lp++ = htonl(0x4bf66e70);							// b	0x366084
-	for (int i = 0; i < OP_MAX; i++) {
-		*lp++ = htonl(POWERPC_EMUL_OP | (i + 3));
-		*lp++ = htonl(0x4bf66e68 - i * 8);				// b	0x366084
-	}
-#else
+#if defined(__powerpc__) /* Native PowerPC */
+	
 	// Install EMUL_RETURN, EXEC_RETURN and EMUL_OP opcodes
 	lp = (uint32 *)(ROMBaseHost + 0x380000 + (M68K_EMUL_RETURN << 3));
 	*lp++ = htonl(0x80000000 + XLM_EMUL_RETURN_PROC);	// lwz	r0,XLM_EMUL_RETURN_PROC
@@ -1155,6 +1143,22 @@ static bool patch_68k_emul(void)
 	*lp++ = htonl(0x80000000 + XLM_EMUL_OP_PROC);	// lwz	r0,XLM_EMUL_OP_PROC
 	*lp++ = htonl(0x7c0803a6);						// mtlr	r0
 	*lp = htonl(0x4e800020);						// blr
+
+#else /* Emlated PowerPC */
+
+	// Install EMUL_RETURN, EXEC_RETURN, EXEC_NATIVE and EMUL_OP opcodes
+	lp = (uint32 *)(ROMBaseHost + 0x380000 + (M68K_EMUL_RETURN << 3));
+	*lp++ = htonl(POWERPC_EMUL_OP);
+	*lp++ = htonl(0x4bf66e80);							// b	0x366084
+	*lp++ = htonl(POWERPC_EMUL_OP | 1);
+	*lp++ = htonl(0x4bf66e78);							// b	0x366084
+	*lp++ = htonl(POWERPC_EMUL_OP | 2);
+	*lp++ = htonl(0x4bf66e70);							// b	0x366084
+	for (int i = 0; i < OP_MAX; i++) {
+		*lp++ = htonl(POWERPC_EMUL_OP | (i + 3));
+		*lp++ = htonl(0x4bf66e68 - i * 8);				// b	0x366084
+	}
+
 #endif
 
 	// Extra routine for 68k emulator start

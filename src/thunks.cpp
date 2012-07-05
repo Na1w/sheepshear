@@ -49,8 +49,7 @@
 /*
  *  Return the fake PowerPC opcode to handle specified native code
  */
-
-#if EMULATED_PPC
+#if !defined(__powerpc__) /* Emulated PowerPC */
 uint32 NativeOpcode(int selector)
 {
 	uint32 opcode;
@@ -109,8 +108,8 @@ uint32 NativeOpcode(int selector)
 /*
  *  Generate PowerPC thunks for GetResource() replacements
  */
+#if !defined(__powerpc__) /* Emulated PowerPC */
 
-#if EMULATED_PPC
 static uint32 get_resource_func;
 static uint32 get_1_resource_func;
 static uint32 get_ind_resource_func;
@@ -250,7 +249,6 @@ static void generate_powerpc_thunks(void)
 /*
  *  Initialize the thunks system
  */
-
 struct native_op_t {
 	uint32 tvect;
 	uint32 func;
@@ -260,27 +258,9 @@ static native_op_t native_op[NATIVE_OP_MAX];
 
 bool ThunksInit(void)
 {
-#if EMULATED_PPC
-	for (int i = 0; i < NATIVE_OP_MAX; i++) {
-		uintptr base = SheepMem::Reserve(16);
-		WriteMacInt32(base + 0, base + 8);
-		WriteMacInt32(base + 4, 0); // Fake TVECT
-		WriteMacInt32(base + 8, NativeOpcode(i));
-		WriteMacInt32(base + 12, POWERPC_BLR);
-		native_op[i].tvect = base;
-		native_op[i].func  = base + 8;
-	}
-#if POWERPC_GET_RESOURCE_THUNKS
-	generate_powerpc_thunks();
-	native_op[NATIVE_GET_RESOURCE].func = get_resource_func;
-	native_op[NATIVE_GET_1_RESOURCE].func = get_1_resource_func;
-	native_op[NATIVE_GET_IND_RESOURCE].func = get_ind_resource_func;
-	native_op[NATIVE_GET_1_IND_RESOURCE].func = get_1_ind_resource_func;
-	native_op[NATIVE_R_GET_RESOURCE].func = r_get_resource_func;
-	native_op[NATIVE_GET_NAMED_RESOURCE].func = get_named_resource_func;
-	native_op[NATIVE_GET_1_NAMED_RESOURCE].func = get_1_named_resource_func;
-#endif
-#else
+
+#if defined(__powerpc__) /* Native PowerPC */
+
 #if defined(__linux__) || defined(__NetBSD__) || (defined(__APPLE__) && defined(__MACH__))
 #define DEFINE_NATIVE_OP(ID, FUNC) do {				\
 		uintptr base = SheepMem::Reserve(8);		\
@@ -329,6 +309,28 @@ bool ThunksInit(void)
 	DEFINE_NATIVE_OP(NATIVE_NQD_INVRECT, NQD_invrect);
 	DEFINE_NATIVE_OP(NATIVE_NQD_FILLRECT, NQD_fillrect);
 #undef DEFINE_NATIVE_OP
+
+#else /* Emulated PowerPC */
+	for (int i = 0; i < NATIVE_OP_MAX; i++) {
+		uintptr base = SheepMem::Reserve(16);
+		WriteMacInt32(base + 0, base + 8);
+		WriteMacInt32(base + 4, 0); // Fake TVECT
+		WriteMacInt32(base + 8, NativeOpcode(i));
+		WriteMacInt32(base + 12, POWERPC_BLR);
+		native_op[i].tvect = base;
+		native_op[i].func  = base + 8;
+	}
+#if POWERPC_GET_RESOURCE_THUNKS
+	generate_powerpc_thunks();
+	native_op[NATIVE_GET_RESOURCE].func = get_resource_func;
+	native_op[NATIVE_GET_1_RESOURCE].func = get_1_resource_func;
+	native_op[NATIVE_GET_IND_RESOURCE].func = get_ind_resource_func;
+	native_op[NATIVE_GET_1_IND_RESOURCE].func = get_1_ind_resource_func;
+	native_op[NATIVE_R_GET_RESOURCE].func = r_get_resource_func;
+	native_op[NATIVE_GET_NAMED_RESOURCE].func = get_named_resource_func;
+	native_op[NATIVE_GET_1_NAMED_RESOURCE].func = get_1_named_resource_func;
+#endif
+
 #endif
 
 	// Initialize routine descriptors (if TVECT exists)

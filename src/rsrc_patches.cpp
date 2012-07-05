@@ -936,9 +936,8 @@ void PatchNativeResourceManager(void)
 	D(bug(" GetResource() entry %08x, TOC %08x\n", ReadMacInt32(tvec), ReadMacInt32(tvec + 4)));
 	WriteMacInt32(XLM_RES_LIB_TOC, ReadMacInt32(tvec + 4));
 	WriteMacInt32(XLM_GET_RESOURCE, ReadMacInt32(tvec));
-#if EMULATED_PPC
-	WriteMacInt32(tvec, NativeFunction(NATIVE_GET_RESOURCE));
-#else
+
+#if defined(__powerpc__) /* Native PowerPC */
 #ifdef __HAIKU__
 	uint32 *tvec2 = (uint32 *)get_resource;
 	WriteMacInt32(tvec, tvec2[0]);
@@ -946,6 +945,8 @@ void PatchNativeResourceManager(void)
 #else
 	WriteMacInt32(tvec, (uint32)get_resource);
 #endif
+#else /* Emulated PowerPC */
+	WriteMacInt32(tvec, NativeFunction(NATIVE_GET_RESOURCE));
 #endif
 
 	// Patch native Get1Resource()
@@ -953,9 +954,8 @@ void PatchNativeResourceManager(void)
 	tvec = ReadMacInt32(upp + 5 * 4);
 	D(bug(" Get1Resource() entry %08x, TOC %08x\n", ReadMacInt32(tvec), ReadMacInt32(tvec + 4)));
 	WriteMacInt32(XLM_GET_1_RESOURCE, ReadMacInt32(tvec));
-#if EMULATED_PPC
-	WriteMacInt32(tvec, NativeFunction(NATIVE_GET_1_RESOURCE));
-#else
+
+#if defined(__powerpc__) /* Native PowerPC */
 #ifdef __HAIKU__
 	tvec2 = (uint32 *)get_1_resource;
 	WriteMacInt32(tvec, tvec2[0]);
@@ -963,6 +963,8 @@ void PatchNativeResourceManager(void)
 #else
 	WriteMacInt32(tvec, (uint32)get_1_resource);
 #endif
+#else /* Emulated PowerPC */
+	WriteMacInt32(tvec, NativeFunction(NATIVE_GET_1_RESOURCE));
 #endif
 
 	// Patch native GetIndResource()
@@ -970,9 +972,8 @@ void PatchNativeResourceManager(void)
 	tvec = ReadMacInt32(upp + 5 * 4);
 	D(bug(" GetIndResource() entry %08x, TOC %08x\n", ReadMacInt32(tvec), ReadMacInt32(tvec + 4)));
 	WriteMacInt32(XLM_GET_IND_RESOURCE, ReadMacInt32(tvec));
-#if EMULATED_PPC
-	WriteMacInt32(tvec, NativeFunction(NATIVE_GET_IND_RESOURCE));
-#else
+
+#if defined(__powerpc__) /* Native PowerPC */
 #ifdef __HAIKU__
 	tvec2 = (uint32 *)get_ind_resource;
 	WriteMacInt32(tvec, tvec2[0]);
@@ -980,6 +981,8 @@ void PatchNativeResourceManager(void)
 #else
 	WriteMacInt32(tvec, (uint32)get_ind_resource);
 #endif
+#else /* Emulated PowerPC */
+	WriteMacInt32(tvec, NativeFunction(NATIVE_GET_IND_RESOURCE));
 #endif
 
 	// Patch native Get1IndResource()
@@ -987,9 +990,8 @@ void PatchNativeResourceManager(void)
 	tvec = ReadMacInt32(upp + 5 * 4);
 	D(bug(" Get1IndResource() entry %08x, TOC %08x\n", ReadMacInt32(tvec), ReadMacInt32(tvec + 4)));
 	WriteMacInt32(XLM_GET_1_IND_RESOURCE, ReadMacInt32(tvec));
-#if EMULATED_PPC
-	WriteMacInt32(tvec, NativeFunction(NATIVE_GET_1_IND_RESOURCE));
-#else
+
+#if defined(__powerpc__) /* Native PowerPC */
 #ifdef __HAIKU__
 	tvec2 = (uint32 *)get_1_ind_resource;
 	WriteMacInt32(tvec, tvec2[0]);
@@ -997,6 +999,8 @@ void PatchNativeResourceManager(void)
 #else
 	WriteMacInt32(tvec, (uint32)get_1_ind_resource);
 #endif
+#else /* Emulated PowerPC */
+	WriteMacInt32(tvec, NativeFunction(NATIVE_GET_1_IND_RESOURCE));
 #endif
 
 	// Patch native RGetResource()
@@ -1004,9 +1008,8 @@ void PatchNativeResourceManager(void)
 	tvec = ReadMacInt32(upp + 5 * 4);
 	D(bug(" RGetResource() entry %08x, TOC %08x\n", ReadMacInt32(tvec), ReadMacInt32(tvec + 4)));
 	WriteMacInt32(XLM_R_GET_RESOURCE, ReadMacInt32(tvec));
-#if EMULATED_PPC
-	WriteMacInt32(tvec, NativeFunction(NATIVE_R_GET_RESOURCE));
-#else
+
+#if defined(__powerpc__) /* Native PowerPC */
 #ifdef __HAIKU__
 	tvec2 = (uint32 *)r_get_resource;
 	WriteMacInt32(tvec, tvec2[0]);
@@ -1014,6 +1017,8 @@ void PatchNativeResourceManager(void)
 #else
 	WriteMacInt32(tvec, (uint32)r_get_resource);
 #endif
+#else /* Emulated PowerPC */
+	WriteMacInt32(tvec, NativeFunction(NATIVE_R_GET_RESOURCE));
 #endif
 
 	// Patch native GetNamedResource()
@@ -1021,9 +1026,8 @@ void PatchNativeResourceManager(void)
 	tvec = ReadMacInt32(upp + 5 * 4);
 	D(bug(" GetNamedResource() entry %08x, TOC %08x\n", ReadMacInt32(tvec), ReadMacInt32(tvec + 4)));
 	WriteMacInt32(XLM_GET_NAMED_RESOURCE, ReadMacInt32(tvec));
-#if EMULATED_PPC
-	WriteMacInt32(tvec, NativeFunction(NATIVE_GET_NAMED_RESOURCE));
-#else
+
+#if defined(__powerpc__) /* Native PowerPC */
 #ifdef __HAIKU__
 	tvec2 = (uint32 *)get_named_resource;
 	WriteMacInt32(tvec, tvec2[0]);
@@ -1031,6 +1035,8 @@ void PatchNativeResourceManager(void)
 #else
 	WriteMacInt32(tvec, (uint32)get_named_resource);
 #endif
+#else /* Emulated PowerPC */
+	WriteMacInt32(tvec, NativeFunction(NATIVE_GET_NAMED_RESOURCE));
 #endif
 
 	// Patch native Get1NamedResource()
@@ -1038,9 +1044,8 @@ void PatchNativeResourceManager(void)
 	tvec = ReadMacInt32(upp + 5 * 4);
 	D(bug(" Get1NamedResource() entry %08x, TOC %08x\n", ReadMacInt32(tvec), ReadMacInt32(tvec + 4)));
 	WriteMacInt32(XLM_GET_1_NAMED_RESOURCE, ReadMacInt32(tvec));
-#if EMULATED_PPC
-	WriteMacInt32(tvec, NativeFunction(NATIVE_GET_1_NAMED_RESOURCE));
-#else
+
+#if defined(__powerpc__) /* Native PowerPC */
 #ifdef __HAIKU__
 	tvec2 = (uint32 *)get_1_named_resource;
 	WriteMacInt32(tvec, tvec2[0]);
@@ -1048,5 +1053,8 @@ void PatchNativeResourceManager(void)
 #else
 	WriteMacInt32(tvec, (uint32)get_1_named_resource);
 #endif
+#else /* Emulated PowerPC */
+	WriteMacInt32(tvec, NativeFunction(NATIVE_GET_1_NAMED_RESOURCE));
 #endif
+	
 }
