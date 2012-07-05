@@ -40,6 +40,9 @@
 #include <unistd.h>
 #include "vm_alloc.h"
 
+#define DEBUG 0
+#include "debug.h"
+
 #if defined(__APPLE__) && defined(__MACH__)
 #include <sys/utsname.h>
 #endif
@@ -53,6 +56,7 @@
 #endif
 #endif
 #endif
+
 
 #ifdef HAVE_WIN32_VM
 /* Windows is either ILP32 or LLP64 */
@@ -82,6 +86,8 @@ typedef unsigned long vm_uintptr_t;
 #define MAP_EXTRA_FLAGS (MAP_32BIT)
 
 #ifdef HAVE_MMAP_VM
+#include <sys/mman.h>
+
 #if (defined(__linux__) && defined(__i386__)) || HAVE_LINKER_SCRIPT
 /* Force a reasonnable address below 0x80000000 on x86 so that we
    don't get addresses above when the program is run on AMD64.
@@ -108,8 +114,10 @@ static int zero_fd	= -1;
 /* Translate generic VM map flags to host values.  */
 
 #ifdef HAVE_MMAP_VM
-static int translate_map_flags(int vm_flags)
+static int
+translate_map_flags(int vm_flags)
 {
+	D(bug("%s", __func__));
 	int flags = 0;
 	if (vm_flags & VM_MAP_SHARED)
 		flags |= MAP_SHARED;
@@ -126,13 +134,16 @@ static int translate_map_flags(int vm_flags)
 /* Align ADDR and SIZE to 64K boundaries.  */
 
 #ifdef HAVE_WIN32_VM
-static inline LPVOID align_addr_segment(LPVOID addr)
+static inline LPVOID
+align_addr_segment(LPVOID addr)
 {
+	D(bug("%s\n", __func__));
 	return (LPVOID)(((vm_uintptr_t)addr) & -((vm_uintptr_t)65536));
 }
 
 static inline DWORD align_size_segment(LPVOID addr, DWORD size)
 {
+	D(bug("%s\n", __func__));
 	return size + ((vm_uintptr_t)addr - (vm_uintptr_t)align_addr_segment(addr));
 }
 #endif
@@ -140,8 +151,10 @@ static inline DWORD align_size_segment(LPVOID addr, DWORD size)
 /* Translate generic VM prot flags to host values.  */
 
 #ifdef HAVE_WIN32_VM
-static int translate_prot_flags(int prot_flags)
+static int
+translate_prot_flags(int prot_flags)
 {
+	D(bug("%s\n", __func__));
 	int prot = PAGE_READWRITE;
 	if (prot_flags == (VM_PAGE_EXECUTE | VM_PAGE_READ | VM_PAGE_WRITE))
 		prot = PAGE_EXECUTE_READWRITE;
@@ -159,8 +172,10 @@ static int translate_prot_flags(int prot_flags)
 
 /* Translate Mach return codes to POSIX errno values. */
 #ifdef HAVE_MACH_VM
-static int vm_error(kern_return_t ret_code)
+static int
+vm_error(kern_return_t ret_code)
 {
+	D(bug("%s\n", __func__));
 	switch (ret_code) {
 		case KERN_SUCCESS:
 			return 0;
@@ -177,8 +192,10 @@ static int vm_error(kern_return_t ret_code)
 
 /* Initialize the VM system. Returns 0 if successful, -1 for errors.  */
 
-int vm_init(void)
+int
+vm_init(void)
 {
+	D(bug("%s\n", __func__));
 #ifdef HAVE_MMAP_VM
 #ifndef zero_fd
 	zero_fd = open("/dev/zero", O_RDWR);
@@ -206,8 +223,10 @@ int vm_init(void)
 
 /* Deallocate all internal data used to wrap virtual memory allocators.  */
 
-void vm_exit(void)
+void
+vm_exit(void)
 {
+	D(bug("%s\n", __func__));
 #ifdef HAVE_MMAP_VM
 #ifndef zero_fd
 	if (zero_fd != -1) {
@@ -222,19 +241,25 @@ void vm_exit(void)
    and default protection bits are read / write. The return value
    is the actual mapping address chosen or VM_MAP_FAILED for errors.  */
 
-void * vm_acquire(size_t size, int options)
+void* 
+vm_acquire(size_t size, int options)
 {
+	D(bug("%s\n", __func__));
+
 	void * addr;
-	
 	errno = 0;
 
 	// VM_MAP_FIXED are to be used with vm_acquire_fixed() only
-	if (options & VM_MAP_FIXED)
+	if (options & VM_MAP_FIXED) {
+		bug("%s: improper VM_MAP_FIXED\n", __func__);
 		return VM_MAP_FAILED;
+	}
 
 #ifndef HAVE_VM_WRITE_WATCH
-	if (options & VM_MAP_WRITE_WATCH)
+	if (options & VM_MAP_WRITE_WATCH) {
+		bug("%s: improper VM_MAP_WRITE_WATCH\n", __func__);
 		return VM_MAP_FAILED;
+	}
 #endif
 
 #if defined(HAVE_MACH_VM)
@@ -242,18 +267,23 @@ void * vm_acquire(size_t size, int options)
 	kern_return_t ret_code = vm_allocate(mach_task_self(), (vm_address_t *)&addr, size, TRUE);
 	if (ret_code != KERN_SUCCESS) {
 		errno = vm_error(ret_code);
+		bug("%s: Mach VM_MAP failed!\n", __func__);
 		return VM_MAP_FAILED;
 	}
 #elif defined(HAVE_MMAP_VM)
 	int fd = zero_fd;
 	int the_map_flags = translate_map_flags(options) | map_flags;
 
-	if ((addr = mmap((caddr_t)next_address, size, VM_PAGE_DEFAULT, the_map_flags, fd, 0)) == (void *)MAP_FAILED)
+	if ((addr = mmap((caddr_t)next_address, size, VM_PAGE_DEFAULT, the_map_flags, fd, 0)) == (void *)MAP_FAILED) {
+		bug("%s: mmap VM_MAP failed!\n", __func__);
 		return VM_MAP_FAILED;
+	}
 	
 	// Sanity checks for 64-bit platforms
-	if (sizeof(void *) == 8 && (options & VM_MAP_32BIT) && !((char *)addr <= (char *)0xffffffff))
+	if (sizeof(void *) == 8 && (options & VM_MAP_32BIT) && !((char *)addr <= (char *)0xffffffff)) {
+		bug("%s: mmap sanity check failed!\n", __func__);
 		return VM_MAP_FAILED;
+	}
 
 	next_address = (char *)addr + size;
 #elif defined(HAVE_WIN32_VM)
@@ -261,11 +291,15 @@ void * vm_acquire(size_t size, int options)
 	if (options & VM_MAP_WRITE_WATCH)
 	  alloc_type |= MEM_WRITE_WATCH;
 
-	if ((addr = VirtualAlloc(NULL, size, alloc_type, PAGE_EXECUTE_READWRITE)) == NULL)
+	if ((addr = VirtualAlloc(NULL, size, alloc_type, PAGE_EXECUTE_READWRITE)) == NULL) {
+		bug("%s: Win32 VirtualAlloc VM_MAP failed!\n", __func__);
 		return VM_MAP_FAILED;
+	}
 #else
-	if ((addr = calloc(size, 1)) == 0)
+	if ((addr = calloc(size, 1)) == 0) {
+		bug("%s: calloc VM_MAP failed!\n", __func__);
 		return VM_MAP_FAILED;
+	}
 	
 	// Omit changes for protections because they are not supported in this mode
 	return addr;
@@ -273,8 +307,10 @@ void * vm_acquire(size_t size, int options)
 
 	// Explicitely protect the newly mapped region here because on some systems,
 	// say MacOS X, mmap() doesn't honour the requested protection flags.
-	if (vm_protect(addr, size, VM_PAGE_DEFAULT) != 0)
+	if (vm_protect(addr, size, VM_PAGE_DEFAULT) != 0) {
+		bug("%s: vm_protect VM_MAP failed!\n", __func__);
 		return VM_MAP_FAILED;
+	}
 	
 	return addr;
 }
@@ -282,17 +318,24 @@ void * vm_acquire(size_t size, int options)
 /* Allocate zero-filled memory at exactly ADDR (which must be page-aligned).
    Retuns 0 if successful, -1 on errors.  */
 
-int vm_acquire_fixed(void * addr, size_t size, int options)
+int
+vm_acquire_fixed(void * addr, size_t size, int options)
 {
+	D(bug("%s\n", __func__));
+
 	errno = 0;
-	
+
 	// Fixed mappings are required to be private
-	if (options & VM_MAP_SHARED)
+	if (options & VM_MAP_SHARED) {
+		bug("%s: improper VM_MAP_SHARED usage!\n", __func__);
 		return -1;
+	}
 
 #ifndef HAVE_VM_WRITE_WATCH
-	if (options & VM_MAP_WRITE_WATCH)
+	if (options & VM_MAP_WRITE_WATCH) {
+		bug("%s: improper VM_MAP_WRITE_WATCH usage!\n", __func__);
 		return -1;
+	}
 #endif
 
 #if defined(HAVE_MACH_VM)
@@ -300,18 +343,23 @@ int vm_acquire_fixed(void * addr, size_t size, int options)
 	kern_return_t ret_code = vm_allocate(mach_task_self(), (vm_address_t *)&addr, size, 0);
 	if (ret_code != KERN_SUCCESS) {
 		errno = vm_error(ret_code);
+		bug("%s: mach vm_allocate VM_MAP failed!!\n", __func__);
 		return -1;
 	}
 #elif defined(HAVE_MMAP_VM)
 	int fd = zero_fd;
 	int the_map_flags = translate_map_flags(options) | map_flags | MAP_FIXED;
 
-	if (mmap((caddr_t)addr, size, VM_PAGE_DEFAULT, the_map_flags, fd, 0) == (void *)MAP_FAILED)
+	if (mmap((caddr_t)addr, size, VM_PAGE_DEFAULT, the_map_flags, fd, 0) == (void *)MAP_FAILED) {
+		bug("%s: mmap VM_MAP failed!\n", __func__);
 		return -1;
+	}
 #elif defined(HAVE_WIN32_VM)
 	// Windows cannot allocate Low Memory
-	if (addr == NULL)
+	if (addr == NULL) {
+		bug("%s: windows can't allocate low memory!\n", __func__);
 		return -1;
+	}
 
 	int alloc_type = MEM_RESERVE | MEM_COMMIT;
 	if (options & VM_MAP_WRITE_WATCH)
@@ -325,13 +373,16 @@ int vm_acquire_fixed(void * addr, size_t size, int options)
 		return -1;
 #else
 	// Unsupported
+	bug("%s: unsupported VM_MAP_FIXED!\n", __func__);
 	return -1;
 #endif
 
 	// Explicitely protect the newly mapped region here because on some systems,
 	// say MacOS X, mmap() doesn't honour the requested protection flags.
-	if (vm_protect(addr, size, VM_PAGE_DEFAULT) != 0)
+	if (vm_protect(addr, size, VM_PAGE_DEFAULT) != 0) {
+		bug("%s: vm_protect VM_MAP failed!!\n", __func__);
 		return -1;
+	}
 
 	return 0;
 }
@@ -339,8 +390,11 @@ int vm_acquire_fixed(void * addr, size_t size, int options)
 /* Deallocate any mapping for the region starting at ADDR and extending
    LEN bytes. Returns 0 if successful, -1 on errors.  */
 
-int vm_release(void * addr, size_t size)
+int
+vm_release(void * addr, size_t size)
 {
+	D(bug("%s\n", __func__));
+
 	// Safety check: don't try to release memory that was not allocated
 	if (addr == VM_MAP_FAILED)
 		return 0;
@@ -368,8 +422,11 @@ int vm_release(void * addr, size_t size)
 /* Change the memory protection of the region starting at ADDR and
    extending LEN bytes to PROT. Returns 0 if successful, -1 for errors.  */
 
-int vm_protect(void * addr, size_t size, int prot)
+int
+vm_protect(void * addr, size_t size, int prot)
 {
+	D(bug("%s\n", __func__));
+
 #ifdef HAVE_MACH_VM
 	int ret_code = vm_protect(mach_task_self(), (vm_address_t)addr, size, 0, prot);
 	return ret_code == KERN_SUCCESS ? 0 : -1;
@@ -394,10 +451,11 @@ int vm_protect(void * addr, size_t size, int prot)
    specified range [ ADDR, ADDR + SIZE [ since the last reset of the watch
    bits. Returns 0 if successful, -1 for errors.  */
 
-int vm_get_write_watch(void * addr, size_t size,
-					   void ** pages, unsigned int * n_pages,
-					   int options)
+int
+vm_get_write_watch(void * addr, size_t size,
+	void ** pages, unsigned int * n_pages, int options)
 {
+	D(bug("%s\n", __func__));
 #ifdef HAVE_VM_WRITE_WATCH
 #ifdef HAVE_WIN32_VM
 	DWORD flags = 0;
@@ -421,8 +479,11 @@ int vm_get_write_watch(void * addr, size_t size,
 /* Reset the write-tracking state for the specified range [ ADDR, ADDR
    + SIZE [. Returns 0 if successful, -1 for errors.  */
 
-int vm_reset_write_watch(void * addr, size_t size)
+int
+vm_reset_write_watch(void * addr, size_t size)
 {
+	D(bug("%s\n", __func__));
+
 #ifdef HAVE_VM_WRITE_WATCH
 #ifdef HAVE_WIN32_VM
 	int ret_code = ResetWriteWatch(addr, size);
@@ -435,8 +496,11 @@ int vm_reset_write_watch(void * addr, size_t size)
 
 /* Returns the size of a page.  */
 
-int vm_get_page_size(void)
+int
+vm_get_page_size(void)
 {
+	D(bug("%s\n", __func__));
+
 #ifdef HAVE_WIN32_VM
 	static vm_uintptr_t page_size = 0;
 	if (page_size == 0) {
@@ -451,8 +515,11 @@ int vm_get_page_size(void)
 }
 
 #ifdef CONFIGURE_TEST_VM_WRITE_WATCH
-int main(void)
+int
+main(void)
 {
+	D(bug("%s\n", __func__));
+
 	int i, j;
 
 	vm_init();
@@ -501,7 +568,8 @@ int main(void)
 #include <stdlib.h>
 #include <signal.h>
 
-static void fault_handler(int sig)
+static void
+fault_handler(int sig)
 {
 	exit(1);
 }
@@ -510,8 +578,11 @@ static void fault_handler(int sig)
    - TEST_VM_PROT_* program slices actually succeeds when a crash occurs
    - TEST_VM_MAP_ANON* program slices succeeds when it could be compiled
 */
-int main(void)
+int
+main(void)
 {
+	D(bug("%s\n", __func__));
+
 	vm_init();
 
 	signal(SIGSEGV, fault_handler);
