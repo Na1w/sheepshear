@@ -388,24 +388,6 @@
 /* Define constant offset for Mac address translation */
 /* #undef NATMEM_OFFSET */
 
-/* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "Christian.Bauer@uni-mainz.de"
-
-/* Define to the full name of this package. */
-#define PACKAGE_NAME "SheepShaver"
-
-/* Define to the full name and version of this package. */
-#define PACKAGE_STRING "SheepShaver 2.3"
-
-/* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "SheepShaver"
-
-/* Define to the home page for this package. */
-#define PACKAGE_URL ""
-
-/* Define to the version of this package. */
-#define PACKAGE_VERSION "2.3"
-
 /* Define if the __PAGEZERO Mach-O Low Memory Globals hack works on this
    system. */
 /* #undef PAGEZERO_HACK */
