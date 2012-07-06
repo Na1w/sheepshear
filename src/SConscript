@@ -60,12 +60,12 @@ cpu_code = ['#/src/kpx_cpu/src/mathlib/ieeefp.cpp', '#/src/kpx_cpu/src/mathlib/m
 
 if machineOS in ('Linux', 'FreeBSD'):
 	env.Append(CPPDEFINES = ['HAVE_BYTESWAP_H', 'HAVE_SIGINFO_T'])
-	env.Append(CPPPATH = ['#src/Unix', '#/src/include/platform/Unix'])
+	env.Append(CPPPATH = ['#src/platform/Unix', '#/src/include/platform/Unix'])
 	env.Append(LIBS = ['rt', 'm'])
-	source_code += Glob('#/src/Unix/*.cpp')
-	source_code += Glob('#/src/Unix/*.c')
-	source_code += Glob('#/src/Unix/Linux/*.cpp')
-	source_code += Glob('#/src/dummy/prefs_dummy.cpp')
+	source_code += Glob('#/src/platform/Unix/*.cpp')
+	source_code += Glob('#/src/platform/Unix/*.c')
+	source_code += Glob('#/src/platform/Unix/Linux/*.cpp')
+	source_code += Glob('#/src/platform/Dummy/prefs_dummy.cpp')
 	dependpkg(env, 'gtk+-2.0', 'GTK')
 	dependpkg(env, 'x11', 'X11')
 	dependpkg(env, 'xext', 'XEXT')
@@ -73,13 +73,13 @@ if machineOS in ('Linux', 'FreeBSD'):
 	dependpkg(env, 'xxf86vm', 'XF86_VIDMODE')
 elif machineOS in ('Darwin'):
 	env.Append(CPPDEFINES = ['HAVE_SIGINFO_T'])
-	env.Append(CPPPATH = ['#src/Unix', '#/src/include/platform/Darwin'])
+	env.Append(CPPPATH = ['#src/platform/Unix', '#/src/include/platform/Darwin'])
 	env.Append(CPPPATH = ['/Developer/SDKs/MacOSX10.6.sdk/usr/include'])
 	env.Append(LIBS = ['rt', 'X'])
-	source_code += Glob('#/src/Unix/*.cpp')
-	source_code += Glob('#/src/Unix/*.c')
-	source_code += Glob('#/src/Unix/Linux/*.cpp')
-	source_code += Glob('#/src/dummy/prefs_dummy.cpp')
+	source_code += Glob('#/src/platform/Unix/*.cpp')
+	source_code += Glob('#/src/platform/Unix/*.c')
+	source_code += Glob('#/src/platform/Unix/Linux/*.cpp')
+	source_code += Glob('#/src/platform/Dummy/prefs_dummy.cpp')
 elif machineOS in ('Haiku'):
 	print "TODO: Haiku Support"
 	sys.exit(1)
@@ -91,7 +91,7 @@ else:
 ppc_cpu_impl = env.Command('ppc-execute-impl.cpp', '#/src/kpx_cpu/src/cpu/ppc/ppc-decode.cpp',
 	'$CC -E $_CPPINCFLAGS -DGENEXEC $SOURCE | /usr/bin/perl src/kpx_cpu/src/cpu/ppc/genexec.pl > $TARGET')
 
-dyngen = env.Program('dyngen', ['./kpx_cpu/src/cpu/jit/dyngen.c','./kpx_cpu/src/cpu/jit/cxxdemangle.cpp'])
+dyngen = env.Program('dyngen', ['#/src/kpx_cpu/src/cpu/jit/dyngen.c','#/src/kpx_cpu/src/cpu/jit/cxxdemangle.cpp'])
 #env.Command('src-list.txt', dyngen, '$SOURCE $SRCGEN_ARGS > $TARGET')
 sheepshear = env.Program('SheepShear', source_code + cpu_code)
 Depends(sheepshear, ppc_cpu_impl)
