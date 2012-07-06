@@ -19,6 +19,10 @@ def dependpkg(environment, package, friendly):
 	environment.Append(CPPDEFINES = ['ENABLE_' + friendly])
 	return;
 
+# Add build options
+use_debug = ARGUMENTS.get('debug', 0)
+use_sdl = ARGUMENTS.get('sdl', 0)
+
 # Common build environment items
 env = Environment()
 machineOS = platform.system()
@@ -30,16 +34,19 @@ if os.environ.has_key('CC'):
 if os.environ.has_key('CXX'):
 	env['CXX'] = os.environ['CXX']
 
+if int(use_debug):
+	env.Append(CCFLAGS = '-g')
+if int(use_sdl):
+	env.Append(CPPDEFINES = ['USE_SDL', 'USE_SDL_AUDIO', 'USE_SDL_VIDEO'])
+
+env.Append(CPPDEFINES = ['_REENTRANT', 'DATADIR=\\"/usr/share/SheepShear\\"','REAL_ADDRESSING=1']);
+
 env.Append(CPPPATH = [
 	'#/src/include',
 	'#/src/kpx_cpu/include',
 	'#/src/kpx_cpu/src',
 	'#/src/slirp',
 	'#/build-release'])
-
-cppdefines = ['_REENTRANT']
-cppdefines += ['DATADIR=\\"/usr/share/SheepShear\\"']
-cppdefines += ['REAL_ADDRESSING=1']
 
 # Common source code
 source_code = Glob('#/src/*.cpp')
@@ -52,11 +59,9 @@ cpu_code = ['#/src/kpx_cpu/src/mathlib/ieeefp.cpp', '#/src/kpx_cpu/src/mathlib/m
 	'#/src/kpx_cpu/src/utils/utils-cpuinfo.cpp', '#/src/kpx_cpu/sheepshaver_glue.cpp']
 
 if machineOS in ('Linux', 'FreeBSD'):
-	cppdefines += ['HAVE_SIGINFO_T']
-	cppdefines += ['HAVE_BYTESWAP_H']
+	env.Append(CPPDEFINES = ['HAVE_BYTESWAP_H', 'HAVE_SIGINFO_T'])
 	env.Append(CPPPATH = ['#src/Unix', '#/src/include/platform/Unix'])
-	env.Append(LIBS = ['rt'])
-	cppdefines += ['HAVE_SIGINFO_T']
+	env.Append(LIBS = ['rt', 'm'])
 	source_code += Glob('#/src/Unix/*.cpp')
 	source_code += Glob('#/src/Unix/*.c')
 	source_code += Glob('#/src/Unix/Linux/*.cpp')
@@ -67,7 +72,7 @@ if machineOS in ('Linux', 'FreeBSD'):
 	dependpkg(env, 'xxf86dga', 'XF86_DGA')
 	dependpkg(env, 'xxf86vm', 'XF86_VIDMODE')
 elif machineOS in ('Darwin'):
-	cppdefines += ['HAVE_SIGINFO_T']
+	env.Append(CPPDEFINES = ['HAVE_SIGINFO_T'])
 	env.Append(CPPPATH = ['#src/Unix', '#/src/include/platform/Darwin'])
 	env.Append(CPPPATH = ['/Developer/SDKs/MacOSX10.6.sdk/usr/include'])
 	env.Append(LIBS = ['rt', 'X'])
@@ -82,7 +87,7 @@ else:
 	print "Unknown operating system!"
 	sys.exit(1)
 
-env.Append(CPPDEFINES = cppdefines)
+
 ppc_cpu_impl = env.Command('ppc-execute-impl.cpp', '#/src/kpx_cpu/src/cpu/ppc/ppc-decode.cpp',
 	'$CC -E $_CPPINCFLAGS -DGENEXEC $SOURCE | /usr/bin/perl src/kpx_cpu/src/cpu/ppc/genexec.pl > $TARGET')
 
