@@ -134,15 +134,47 @@
 #endif
 #endif
 
-// Data types
-#if defined(__gcc__)
-#error TODO Datatype size for gcc
-#elif defined(__clang__)
+
+/*
+ * Set datatype sizes
+ * Should work for most common compilers
+ */
+#if defined(__SIZEOF_LONG__)
 #define SIZEOF_SHORT __SIZEOF_SHORT__
 #define SIZEOF_INT __SIZEOF_INT__
 #define SIZEOF_LONG __SIZEOF_LONG__
 #define SIZEOF_LONG_LONG __SIZEOF_LONG_LONG__
 #define SIZEOF_VOID_P __SIZEOF_POINTER__
+#elif defined(_LP64)
+#define SIZEOF_SHORT 16
+#define SIZEOF_INT 32
+#define SIZEOF_LONG 64
+#define SIZEOF_LONG_LONG 0
+#define SIZEOF_VOID_P 64
+#elif defined(_ILP64)
+#define SIZEOF_SHORT 16
+#define SIZEOF_INT 64
+#define SIZEOF_LONG 64
+#define SIZEOF_LONG_LONG 0
+#define SIZEOF_VOID_P 64
+#elif defined(_LLP64)
+#define SIZEOF_SHORT 16
+#define SIZEOF_INT 32
+#define SIZEOF_LONG 32
+#define SIZEOF_LONG_LONG 64
+#define SIZEOF_VOID_P 64
+#elif defined(_ILP32)
+#define SIZEOF_SHORT 16
+#define SIZEOF_INT 32
+#define SIZEOF_LONG 32
+#define SIZEOF_LONG_LONG 0
+#define SIZEOF_VOID_P 32
+#elif defined(_LP32)
+#define SIZEOF_SHORT 16
+#define SIZEOF_INT 16
+#define SIZEOF_LONG 32
+#define SIZEOF_LONG_LONG 0
+#define SIZEOF_VOID_P 32
 #else
 #error Set datatype size detection for compiler
 #endif
