@@ -1,27 +1,47 @@
 How do I compile SheepShear?
 ============================
 SheepShear is a compex emulator supporting a large number of platforms.
-Instructions below detail the steps for each.
 
-The instructions below may be subject to change given SheepShear's rapid pace of change.
+SheepShear uses the SCons (http://scons.org) build system. SCons
+enables SheepShear to build on a wide range of platforms with minimal
+requirements.
 
-Linux gcc
----------
- * cd src/Unix
- * ./autogen.sh
- * make
+Requirements
+------------
+-   A Compiler (gcc or clang)
+-   Python
+-   SCons
 
-Linux clang
------------
- * cd src/Unix
- * CC=clang CXX=clang++ ./autogen.sh --disable-jit
+Installing SCons
+----------------
+### Linux
+-   Utilize your favorate package manager to install SCons
 
-MacOS X
--------
- * cd src/Unix
- * ./autogen.sh --x-includes=/Developer/SDKs/MacOSX10.6.sdk/usr/X11/include --x-libraries=/Developer/SDKs/MacOSX10.6.sdk/usr/X11/lib --without-gtk
+### MacOS X / Darwin
+-   Download SCons from http://scons.org
+-   Extract SCons and change to the SCons directory
+-   python setup.py install
 
-Haiku
------
- * cd src/Haiku
- * make
+### Haiku
+-   Install SCons from Haiku ports
+
+### Windows
+-   Install Python and SCons
+
+Compiling
+-------------------
+
+### Basic Build
+-   Enter the sheepshear directory
+-   execute `scons` to build
+
+### Using a different compiler
+You can utilize a different compiler by defining CC and CXX
+`CC=gcc CXX=g++ scons`
+`CC=clang CXX=clang++ scons`
+
+### Build options
+-   Enable Debugging symbols
+    `scons debug=1`
+-   Enable SDL
+    `scons sdl=1`
