@@ -2,6 +2,11 @@
  * User definable configuration options
  */
 
+
+#include "sysdeps.h"
+
+ 
+
 /* Undefine if you don't want talk emulation */
 #undef EMULATE_TALK
 
