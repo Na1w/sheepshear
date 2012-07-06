@@ -25,6 +25,30 @@
 #include <stddef.h>
 
 
+struct VidLocals {
+	uint16  saveMode;
+	uint32  saveData;
+	uint16  savePage;
+	uint32  saveBaseAddr;
+	uint32  gammaTable;         // Mac address of gamma tble
+	uint32  maxGammaTableSize;  // Biggest gamma table allocated
+	uint32  saveVidParms;
+	bool    luminanceMapping;   // Luminance mapping on/off
+	bool    cursorHardware;     // True if using hardware cursor
+	int32   cursorX;            // Hardware cursor state
+	int32   cursorY;
+	uint32  cursorVisible;
+	uint32  cursorSet;
+	bool    cursorHotFlag;
+	uint8   cursorHotX;
+	uint8   cursorHotY;
+	uint32  vslServiceID;       // VSL interrupt service ID
+	bool    interruptsEnabled;  // VBL interrupts on/off
+	uint32  regEntryID;         // Mac address of the service owner
+};
+
+
+#if !defined(__APPLE__)
 /*
  * Definitions for Display Manager
  */
@@ -390,7 +414,7 @@ enum {
 	acclDestRect		= offsetof(accl_params, dest_rect),
 	acclDrawProc		= offsetof(accl_params, draw_proc)
 };
-
+#endif /* !defined(__APPLE__) */
 
 // Hook info for NQDMisc
 struct accl_hook_info {
@@ -398,30 +422,6 @@ struct accl_hook_info {
 	uint32 sync_func;
 	uint32 code;
 };
-
-
-struct VidLocals {
-	uint16  saveMode;
-	uint32  saveData;
-	uint16  savePage;
-	uint32  saveBaseAddr;
-	uint32  gammaTable;         // Mac address of gamma tble
-	uint32  maxGammaTableSize;  // Biggest gamma table allocated
-	uint32  saveVidParms;
-	bool    luminanceMapping;   // Luminance mapping on/off
-	bool    cursorHardware;     // True if using hardware cursor
-	int32   cursorX;            // Hardware cursor state
-	int32   cursorY;
-	uint32  cursorVisible;
-	uint32  cursorSet;
-	bool    cursorHotFlag;
-	uint8   cursorHotX;
-	uint8   cursorHotY;
-	uint32  vslServiceID;       // VSL interrupt service ID
-	bool    interruptsEnabled;  // VBL interrupts on/off
-	uint32  regEntryID;         // Mac address of the service owner
-};
-
 
 
 // Hook function index

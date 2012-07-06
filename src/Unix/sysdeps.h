@@ -135,6 +135,18 @@
 #endif
 
 // Data types
+#if defined(__gcc__)
+#error TODO Datatype size for gcc
+#elif defined(__clang__)
+#define SIZEOF_SHORT __SIZEOF_SHORT__
+#define SIZEOF_INT __SIZEOF_INT__
+#define SIZEOF_LONG __SIZEOF_LONG__
+#define SIZEOF_LONG_LONG __SIZEOF_LONG_LONG__
+#define SIZEOF_VOID_P __SIZEOF_POINTER__
+#else
+#error Set datatype size detection for compiler
+#endif
+
 typedef unsigned char uint8;
 typedef signed char int8;
 #if SIZEOF_SHORT == 2
@@ -146,6 +158,7 @@ typedef int int16;
 #else
 #error "No 2 byte type, you lose."
 #endif
+
 #if SIZEOF_INT == 4
 typedef unsigned int uint32;
 typedef int int32;
@@ -155,6 +168,7 @@ typedef long int32;
 #else
 #error "No 4 byte type, you lose."
 #endif
+
 #if SIZEOF_LONG == 8
 typedef unsigned long uint64;
 typedef long int64;
@@ -168,6 +182,7 @@ typedef long long int64;
 #else
 #error "No 8 byte type, you lose."
 #endif
+
 #if SIZEOF_VOID_P == 4
 typedef uint32 uintptr;
 typedef int32 intptr;

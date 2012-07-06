@@ -398,6 +398,7 @@
 /* Define if your system requires signals to be reinstalled. */
 /* #undef SIGNAL_NEED_REINSTALL */
 
+#if 0
 /* The size of `double', as computed by sizeof. */
 #define SIZEOF_DOUBLE 8
 
@@ -418,7 +419,8 @@
 
 /* The size of `void *', as computed by sizeof. */
 #define SIZEOF_VOID_P 8
-
+#endif
+   
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 

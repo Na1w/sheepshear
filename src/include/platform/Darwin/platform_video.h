@@ -1,5 +1,5 @@
 /*
- *  platform_audio.h - Audio platform defines
+ *  platform_video.h - Video platform defines
  *
  *  SheepShear, 2012 Alexander von Gluck IV
  *
@@ -17,43 +17,29 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#ifndef _PLATFORM_AUDIO_H
-#define _PLATFORM_AUDIO_H
+#ifndef _PLATFORM_VIDEO_H
+#define _PLATFORM_VIDEO_H
 
 
-#include "audio_defs.h"
+#include "video_defs.h"
 
 
-class PlatformAudio
+class PlatformVideo
 {
 public:
-		// Required for PlatformAudio class
-		void				DeviceInit();
+		// Required for PlatformVideo class
+		bool				DeviceInit();
 		void				DeviceShutdown();
-		void				DeviceInterrupt();
 		bool				DeviceOpen();
 		void				DeviceClose();
+		void				DeviceInterrupt();
 
+		void				InstallAccel();
+
+		void				DeviceQuitFullScreen();
 protected:
-		bool				GetMainMute();
-		void				SetMainMute(bool mute);
-		uint32				GetMainVolume();
-		void				SetMainVolume(uint32 vol);
-		bool				GetSpeakerMute();
-		void				SetSpeakerMute(bool mute);
-		uint32				GetSpeakerVolume();
-		void				SetSpeakerVolume(uint32 vol);
-
-		void				StreamStart();
-		void				StreamEnd();
-
-		struct audio_status	fAudioStatus;
-		bool				fAudioOpen;
-		int					fSampleRateIndex;
-		int					fSampleSizeIndex;
-		int					fChannelCountIndex;
-		int					fFramesPerBlock;
+		int16				ModeChange(VidLocals *csSave, uint32 ParamPtr);
 };
 
 
-#endif /* _PLATFORM_AUDIO */
+#endif /* _PLATFORM_VIDEO */

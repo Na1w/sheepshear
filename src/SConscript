@@ -68,10 +68,9 @@ if machineOS in ('Linux', 'FreeBSD'):
 	dependpkg(env, 'xxf86vm', 'XF86_VIDMODE')
 elif machineOS in ('Darwin'):
 	cppdefines += ['HAVE_SIGINFO_T']
-	env.Append(CPPPATH = ['#src/Unix', '#/src/include/platform/Unix'])
+	env.Append(CPPPATH = ['#src/Unix', '#/src/include/platform/Darwin'])
 	env.Append(CPPPATH = ['/Developer/SDKs/MacOSX10.6.sdk/usr/include'])
 	env.Append(LIBS = ['rt', 'X'])
-	cppdefines += ['HAVE_SIGINFO_T']
 	source_code += Glob('#/src/Unix/*.cpp')
 	source_code += Glob('#/src/Unix/*.c')
 	source_code += Glob('#/src/Unix/Linux/*.cpp')

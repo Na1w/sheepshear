@@ -22,6 +22,7 @@
 
 
 #include "platform_video.h"
+
 #include "video_defs.h"
 
 
@@ -37,6 +38,7 @@ struct VideoInfo {
 	uint32 viAppleMode;		// Screen Color Depth
 	uint32 viAppleID;		// Screen DisplayID
 };
+
 
 extern struct VideoInfo VModes[];	// List of available video modes
 

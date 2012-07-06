@@ -33,7 +33,7 @@ struct audio_status {
 	int num_sources;        // Number of active sources
 };
 
-
+#if !defined(__APPLE__)
 // Error codes
 enum {
 	badComponentSelector = (int32)0x80008002,
@@ -181,6 +181,7 @@ enum {
 	adatStreamInfo = 200,       // Mac address of stream info, returned by adatGetSourceData
 	SIZEOF_adat = 204
 };
+#endif
 
 
 #endif
