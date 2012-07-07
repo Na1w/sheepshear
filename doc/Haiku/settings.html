@@ -22,12 +22,12 @@ by SheepShaver. If this list is empty, SheepShaver will try to detect and mount 
 it can find. CD-ROM drives are always automatically detected and used.
 
 <P>SheepShaver can use HFS partitions, whole HFS formatted drives, and it can also
-emulate hard disks in single BeOS files ("hardfiles").
+emulate hard disks in single Haiku files ("hardfiles").
 
-<P>To add a Mac volume to the list, mount it on the BeOS side, click on <B>"Add..."</B>, go to the "Disks"
+<P>To add a Mac volume to the list, mount it on the Haiku side, click on <B>"Add..."</B>, go to the "Disks"
 level in the topmost popup menu of the file panel, click once on the volume you want and
 click on "Add". A line beginning with "/dev/disk/" should then appear in the volume list.
-After adding volumes to the list, you should unmount them on the BeOS side again.To remove
+After adding volumes to the list, you should unmount them on the Haiku side again.To remove
 a Mac volume, select it in the list and click on <B>"Remove"</B>.
 
 <P>You can create a new, empty hardfile by clicking on <B>"Create..."</B>. Enter the file
@@ -40,14 +40,14 @@ option to format it.
 <P>Double-clicking on an entry in the volume list will add or remove a "*" in front of the
 device name. Volumes marked with a "*" are read-only for the MacOS under SheepShaver.
 
-<P>SheepShaver will show a "BeOS" disk icon on the Mac desktop that allows access to BeOS
-files from Mac applications. In <B>"BeOS Root"</B> you specify which BeOS directory will
-be at the root of this virtual "BeOS" disk. You can enter a path name here or drag and drop a
-Tracker folder onto it. The default setting of "/boot" means that the "BeOS" icon in the MacOS
-Finder will correspond to your BeOS boot volume. If you want to access files on other BeOS
-volumes, you should enter "/" here. The "BeOS" disk will then contain folders for each BeOS
+<P>SheepShaver will show a "Haiku" disk icon on the Mac desktop that allows access to Haiku
+files from Mac applications. In <B>"Haiku Root"</B> you specify which Haiku directory will
+be at the root of this virtual "Haiku" disk. You can enter a path name here or drag and drop a
+Tracker folder onto it. The default setting of "/boot" means that the "Haiku" icon in the MacOS
+Finder will correspond to your Haiku boot volume. If you want to access files on other Haiku
+volumes, you should enter "/" here. The "Haiku" disk will then contain folders for each Haiku
 volume (among other things). The MacOS will create files and folders like "Desktop", "Trash",
-"OpenFolderListDF" etc. in the directory you specify as "BeOS Root". If they annoy you, you
+"OpenFolderListDF" etc. in the directory you specify as "Haiku Root". If they annoy you, you
 can delete them.
 
 <P>To boot from CD-ROM, set the <B>"Boot From"</B> setting to <B>"CD-ROM"</B>.
@@ -62,8 +62,8 @@ This is currently of not much use and you should leave the box unselected.
 Higher rates mean faster screen updates and less "sluggish" behaviour, but also require more CPU time.
 
 <P>The <B>"QuickDraw Acceleration"</B> box should always be enabled. It allows for faster graphics in
-full-screen modes. But if your machine uses the "IXMicro" BeOS video driver, you have to disable the
-QuickDraw acceleration or full-screen modes won't work (this is because of BeOS bug #981112-032247).
+full-screen modes. But if your machine uses the "IXMicro" Haiku video driver, you have to disable the
+QuickDraw acceleration or full-screen modes won't work (this is because of Haiku bug #981112-032247).
 
 <P>The main part of the window is occupied by a list of checkboxes that allows you to select
 which <B>graphics modes</B> are available for displaying the MacOS desktop. You can, for
@@ -95,7 +95,7 @@ can use the <B>"Disable Ethernet"</B> checkbox to disable it (this will also get
 <IMG SRC="memory.gif">
 
 <P>With <B>"MacOS RAM Size"</B> you select how much RAM will be available to the MacOS
-(and all MacOS applications running under it). SheepShaver uses the BeOS virtual memory system,
+(and all MacOS applications running under it). SheepShaver uses the Haiku virtual memory system,
 so you can select more RAM than you physically have in your machine. The MacOS virtual memory
 system is not available under SheepShaver (i.e. if you have 32MB of RAM in your computer and
 select 64MB to be used for MacOS in the SheepShaver settings, MacOS will behave as if it's running on
