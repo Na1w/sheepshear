@@ -420,8 +420,8 @@ static void set_window_name(Window w, int name)
 	XClassHint *hints;
 	hints = XAllocClassHint();
 	if (hints) {
-		hints->res_name = (char *)"SheepShaver";
-		hints->res_class = (char *)"SheepShaver";
+		hints->res_name = (char *)"SheepShear";
+		hints->res_class = (char *)"SheepShear";
 		XSetClassHint(x_display, w, hints);
 		XFree(hints);
 	}
@@ -783,7 +783,7 @@ static bool open_fbdev_dga(int width, int height)
 	VModes[cur_mode].viRowBytes = bytes_per_row;
 	return true;
 #else
-	ErrorAlert("SheepShaver has been compiled with DGA support disabled.");
+	ErrorAlert("SheepShear has been compiled with DGA support disabled.");
 	return false;
 #endif
 }
@@ -878,7 +878,7 @@ static bool open_xf86_dga(int width, int height)
 	VModes[cur_mode].viRowBytes = bytes_per_row;
 	return true;
 #else
-	ErrorAlert("SheepShaver has been compiled with DGA support disabled.");
+	ErrorAlert("SheepShear has been compiled with DGA support disabled.");
 	return false;
 #endif
 }
