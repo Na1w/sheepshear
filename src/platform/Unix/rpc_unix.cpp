@@ -886,9 +886,10 @@ int rpc_dispatch(rpc_connection_t *connection)
   rpc_message_init(&message, connection);
 
   int32_t method, value, ret = RPC_MESSAGE_FAILURE;
-  if (rpc_message_recv_int32(&message, &value) != RPC_ERROR_NO_ERROR &&
-	  value != RPC_MESSAGE_START)
-	return ret;
+  if (rpc_message_recv_int32(&message, &value) != RPC_ERROR_NO_ERROR
+    || value != RPC_MESSAGE_START) {
+    return ret;
+  }
 
   D(bug("receiving message\n"));
   if (rpc_message_recv_int32(&message, &method) == RPC_ERROR_NO_ERROR &&
