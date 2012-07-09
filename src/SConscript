@@ -27,6 +27,7 @@ use_sdl = ARGUMENTS.get('sdl', 0)
 env = Environment()
 machineOS = platform.system()
 machineCPU = platform.machine()
+env['ENV']['TERM'] = os.environ['TERM']
 
 # Enable compiler overrides
 if os.environ.has_key('CC'):
