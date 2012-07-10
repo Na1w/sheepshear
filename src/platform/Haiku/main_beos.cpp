@@ -114,6 +114,7 @@ const char KERNEL_AREA_NAME[] = "Macintosh Kernel Data";
 const char KERNEL_AREA2_NAME[] = "Macintosh Kernel Data 2";
 const char RAM_AREA_NAME[] = "Macintosh RAM";
 const char ROM_AREA_NAME[] = "Macintosh ROM";
+const char LOW_AREA_NAME[] = "Macintosh LOW Memory";
 const char DR_CACHE_AREA_NAME[] = "Macintosh DR Cache";
 const char DR_EMULATOR_AREA_NAME[] = "Macintosh DR Emulator";
 const char SHEEP_AREA_NAME[] = "SheepShear Virtual Stack";
@@ -143,7 +144,7 @@ public:
 		chdir(the_path.Path());
 
 		// Initialize other variables
-		sheep_fd = -1;
+		sheepHostDriver = -1;
 		emulator_data = NULL;
 		kernel_area = kernel_area2 = rom_area = ram_area = dr_cache_area = dr_emulator_area = -1;
 		emul_thread = nvram_thread = tick_thread = -1;
@@ -188,13 +189,14 @@ private:
 
 	void load_rom(void);
 
-	int sheep_fd;			// FD of sheep driver
+	int sheepHostDriver;	// FD of sheep driver
 	uint32 page_size;		// Size of a native page
 
 	area_id kernel_area;	// Kernel Data area ID
 	area_id kernel_area2;	// Alternate Kernel Data area ID
 	area_id rom_area;		// ROM area ID
 	area_id ram_area;		// RAM area ID
+	area_id low_area;		// LOW area ID
 	area_id dr_cache_area;	// DR Cache area ID
 	area_id dr_emulator_area;	// DR Emulator area ID
 
@@ -218,6 +220,7 @@ void *TOC;				// TOC pointer
 uint32 RAMBase;			// Base address of Mac RAM
 uint32 RAMSize;			// Size of Mac RAM
 uint32 ROMBase;			// Base address of Mac ROM
+uint32 LOWBase;			// Base address of Mac low memory
 uint32 KernelDataAddr;	// Address of Kernel Data
 uint32 BootGlobsAddr;	// Address of BootGlobs structure at top of Mac RAM
 uint32 DRCacheAddr;		// Address of DR Cache
@@ -229,6 +232,7 @@ int64 TimebaseSpeed;	// Timebase clock speed (Hz)
 system_info fSysInfo;	// System information
 uint8 *RAMBaseHost;		// Base address of Mac RAM (host address space)
 uint8 *ROMBaseHost;		// Base address of Mac ROM (host address space)
+uint8 *LOWBaseHost;		// Base address of Mac low memory (host address space)
 
 static void *sig_stack = NULL;		// Stack for signal handlers
 static void *extra_stack = NULL;	// Stack for SIGSEGV inside interrupt handler
@@ -435,6 +439,17 @@ void SheepShear::StartEmulator(void)
 		RAMSize = 8*1024*1024;
 	}
 
+	// Create Low Memory area (0x0000..0x3000)
+	LOWBase = 0;
+	LOWBaseHost = Mac2HostAddr(LOWBase);
+
+	low_area = create_area(LOW_AREA_NAME, (void **)&LOWBaseHost, B_BASE_ADDRESS, 0x3000,
+		B_NO_LOCK, B_READ_AREA | B_WRITE_AREA);
+
+	if (low_area < 0) {
+		throw area_error();
+	}
+
 #if REAL_ADDRESSING
 	bug("Using real addressing.\n");
 
@@ -474,6 +489,7 @@ void SheepShear::StartEmulator(void)
 
 	D(bug("RAM area %ld at %p (vaddr: 0x%lx)\n", ram_area, RAMBaseHost, RAMBase));
 	D(bug("ROM area %ld at %p (vaddr: 0x%lx)\n", rom_area, ROMBaseHost, ROMBase));
+	D(bug("LOW area %ld at %p (vaddr: 0x%lx)\n", low_area, LOWBaseHost, LOWBase));
 
 	// Create area and load Mac ROM
 	try {
@@ -563,14 +579,14 @@ status_t
 SheepShear::DriverConnect()
 {
 	#if defined(__powerpc__)
-    sheep_fd = open("/dev/sheep", 0);
-    if (sheep_fd < 0) {
-        sprintf(str, GetString(STR_NO_SHEEP_DRIVER_ERR), strerror(sheep_fd), sheep_fd);
+    sheepHostDriver = open("/dev/sheep", 0);
+    if (sheepHostDriver < 0) {
+        sprintf(str, GetString(STR_NO_SHEEP_DRIVER_ERR), strerror(sheepHostDriver), sheepHostDriver);
         ErrorAlert(str);
         PostMessage(B_QUIT_REQUESTED);
         return B_ERROR;
     }
-    status_t res = ioctl(sheep_fd, SHEEP_UP);
+    status_t res = ioctl(sheepHostDriver, SHEEP_UP);
     if (res < 0) {
         sprintf(str, GetString(STR_SHEEP_UP_ERR), strerror(res), res);
         ErrorAlert(str);
@@ -589,9 +605,9 @@ void
 SheepShear::DriverDisconnect()
 {
 	#if defined(__powerpc__)
-    if (sheep_fd >= 0) {
-        ioctl(sheep_fd, SHEEP_DOWN);
-        close(sheep_fd);
+    if (sheepHostDriver >= 0) {
+        ioctl(sheepHostDriver, SHEEP_DOWN);
+        close(sheepHostDriver);
     }
 	#endif
 }
@@ -647,6 +663,10 @@ void SheepShear::Quit(void)
 	if (dr_cache_area >= 0)
 		delete_area(dr_cache_area);
 
+	// Delete LOW memory area
+	if (low_area >= 0)
+		delete_area(low_area);
+
 	// Delete ROM area
 	if (rom_area >= 0)
 		delete_area(rom_area);
@@ -689,10 +709,10 @@ void SheepShear::load_rom(void)
 	// Try to open ROM file
 	BFile file(rom_path && *rom_path ? rom_path : ROM_FILE_NAME, B_READ_ONLY);
 	if (file.InitCheck() != B_NO_ERROR) {
-
-		// Failed, then ask memory_mess driver for ROM
+		#if defined(__powerpc__)
+		// Failed, then ask Sheep host driver for ROM
 		uint8 *rom = new uint8[ROM_SIZE];	// Reading directly into the area doesn't work
-		ssize_t actual = read(sheep_fd, (void *)rom, ROM_SIZE);
+		ssize_t actual = read(sheepHostDriver, (void *)rom, ROM_SIZE);
 		if (actual == ROM_SIZE) {
 			memcpy(ROMBaseHost, rom, ROM_SIZE);
 			delete[] rom;
@@ -701,6 +721,9 @@ void SheepShear::load_rom(void)
 			delete[] rom;
 			throw file_open_error();
 		}
+		#else
+		throw file_open_error();
+		#endif
 	}
 
 	printf(GetString(STR_READING_ROM_FILE));
