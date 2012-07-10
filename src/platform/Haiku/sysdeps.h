@@ -117,6 +117,7 @@ typedef int32 intptr;
 
 // Timing functions
 extern void Delay_usec(uint32 usec);
+extern uint64 GetTicks_usec(void);
 
 // Macro for calling MacOS routines
 #if 0

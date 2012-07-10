@@ -27,6 +27,7 @@ use_sdl = ARGUMENTS.get('sdl', 0)
 env = Environment()
 machineOS = platform.system()
 machineCPU = platform.machine()
+env['ENV']['PATH'] = os.environ['PATH']
 env['ENV']['TERM'] = os.environ['TERM']
 
 # Enable compiler overrides
@@ -46,12 +47,10 @@ env.Append(CPPPATH = [
 	'#/src/include',
 	'#/src/kpx_cpu/include',
 	'#/src/kpx_cpu/src',
-	'#/src/slirp',
 	'#/build-release'])
 
 # Common source code
 source_code = Glob('#/src/*.cpp')
-source_code += Glob('#/src/slirp/*.c')
 
 # TODO: Only non-jit for the moment
 cpu_code = ['#/src/kpx_cpu/src/mathlib/ieeefp.cpp', '#/src/kpx_cpu/src/mathlib/mathlib.cpp',
@@ -61,8 +60,10 @@ cpu_code = ['#/src/kpx_cpu/src/mathlib/ieeefp.cpp', '#/src/kpx_cpu/src/mathlib/m
 
 if machineOS in ('Linux', 'FreeBSD'):
 	env.Append(CPPDEFINES = ['HAVE_BYTESWAP_H', 'HAVE_SIGINFO_T'])
-	env.Append(CPPPATH = ['#src/platform/Unix', '#/src/include/platform/Unix'])
+	env.Append(CPPPATH = ['#/src/platform/Unix', '#/src/include/platform/Unix'])
+	env.Append(CPPPATH = ['#/src/slirp'])
 	env.Append(LIBS = ['rt', 'm'])
+	source_code += Glob('#/src/slirp/*.c')
 	source_code += Glob('#/src/platform/Unix/*.cpp')
 	source_code += Glob('#/src/platform/Unix/*.c')
 	source_code += Glob('#/src/platform/Unix/Linux/*.cpp')
@@ -74,23 +75,34 @@ if machineOS in ('Linux', 'FreeBSD'):
 	dependpkg(env, 'xxf86vm', 'XF86_VIDMODE')
 elif machineOS in ('Darwin'):
 	env.Append(CPPDEFINES = ['HAVE_SIGINFO_T'])
-	env.Append(CPPPATH = ['#src/platform/Unix', '#/src/include/platform/Darwin'])
+	env.Append(CPPPATH = ['#/src/platform/Unix', '#/src/include/platform/Darwin'])
+	env.Append(CPPPATH = ['#/src/slirp'])
 	env.Append(CPPPATH = ['/Developer/SDKs/MacOSX10.6.sdk/usr/include'])
 	env.Append(LIBS = ['rt', 'X'])
+	source_code += Glob('#/src/slirp/*.c')
 	source_code += Glob('#/src/platform/Unix/*.cpp')
 	source_code += Glob('#/src/platform/Unix/*.c')
 	source_code += Glob('#/src/platform/Unix/Linux/*.cpp')
 	source_code += Glob('#/src/platform/Dummy/prefs_dummy.cpp')
 elif machineOS in ('Haiku'):
-	print "TODO: Haiku Support"
-	sys.exit(1)
+	env['ENV']['BEINCLUDES'] = os.environ['BEINCLUDES']
+	env['ENV']['BELIBRARIES'] = os.environ['BELIBRARIES']
+	env.Append(CPPDEFINES = ['PRECISE_TIMING_BEOS=1', 'HAVE_SIGINFO_T'])
+	env.Append(CPPPATH = ['#/src/platform/Haiku', '#/src/include/platform/Haiku'])
+	env.Append(CPPPATH = ['#/src/platform/Haiku/SheepDriver', '#/src/platform/Haiku/SheepNet'])
+	env.Append(LIBS = ['be', 'tracker', 'game', 'media', 'translation', 'GL'])
+	env.Append(LIBS = ['textencoding', 'device', 'GL', 'stdc++'])
+	source_code += Glob('#/src/platform/Haiku/*.cpp')
+	source_code += Glob('#/src/platform/Haiku/*.c')
+	source_code += Glob('#/src/platform/Haiku/Linux/*.cpp')
+	#source_code += Glob('#/src/platform/Dummy/prefs_dummy.cpp')
 else:
 	print "Unknown operating system!"
 	sys.exit(1)
 
 
 ppc_cpu_impl = env.Command('ppc-execute-impl.cpp', '#/src/kpx_cpu/src/cpu/ppc/ppc-decode.cpp',
-	'$CC -E $_CPPINCFLAGS -DGENEXEC $SOURCE | /usr/bin/perl src/kpx_cpu/src/cpu/ppc/genexec.pl > $TARGET')
+	'$CC -E $_CPPINCFLAGS -DGENEXEC $SOURCE | perl src/kpx_cpu/src/cpu/ppc/genexec.pl > $TARGET')
 
 dyngen = env.Program('dyngen', ['#/src/kpx_cpu/src/cpu/jit/dyngen.c','#/src/kpx_cpu/src/cpu/jit/cxxdemangle.cpp'])
 #env.Command('src-list.txt', dyngen, '$SOURCE $SRCGEN_ARGS > $TARGET')

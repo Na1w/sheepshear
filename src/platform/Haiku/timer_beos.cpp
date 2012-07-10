@@ -18,6 +18,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <KernelKit.h>
 
 #include "sysdeps.h"
@@ -163,4 +164,14 @@ void idle_resume(void)
 #if 0
 	resume_thread(emul_thread);
 #endif
+}
+
+
+/*
+ *  Get current value of microsecond timer
+ */
+uint64 GetTicks_usec(void)
+{
+	#warning WARNING: GetTicks!
+	return 0;
 }
