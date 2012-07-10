@@ -90,12 +90,11 @@ elif machineOS in ('Haiku'):
 	env.Append(CPPDEFINES = ['PRECISE_TIMING_BEOS=1', 'HAVE_SIGINFO_T'])
 	env.Append(CPPPATH = ['#/src/platform/Haiku', '#/src/include/platform/Haiku'])
 	env.Append(CPPPATH = ['#/src/platform/Haiku/SheepDriver', '#/src/platform/Haiku/SheepNet'])
-	env.Append(LIBS = ['be', 'tracker', 'game', 'media', 'translation', 'GL'])
-	env.Append(LIBS = ['textencoding', 'device', 'GL', 'stdc++'])
+	env.Append(LIBS = ['root', 'be', 'device', 'game', 'media', 'textencoding', 'tracker'])
+	env.Append(LIBS = ['translation', 'GL', 'stdc++'])
 	source_code += Glob('#/src/platform/Haiku/*.cpp')
 	source_code += Glob('#/src/platform/Haiku/*.c')
 	source_code += Glob('#/src/platform/Haiku/Linux/*.cpp')
-	#source_code += Glob('#/src/platform/Dummy/prefs_dummy.cpp')
 else:
 	print "Unknown operating system!"
 	sys.exit(1)

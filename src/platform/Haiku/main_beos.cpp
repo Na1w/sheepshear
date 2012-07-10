@@ -232,6 +232,8 @@ uint8 *ROMBaseHost;		// Base address of Mac ROM (host address space)
 
 static void *sig_stack = NULL;		// Stack for signal handlers
 static void *extra_stack = NULL;	// Stack for SIGSEGV inside interrupt handler
+
+uint32  SheepMem::page_size;                // Size of a native page
 uintptr SheepMem::zero_page = 0;	// Address of ro page filled in with zeros
 uintptr SheepMem::base = 0x60000000;// Address of SheepShear data
 uintptr SheepMem::proc;				// Bottom address of SheepShave procedures
@@ -1093,16 +1095,7 @@ asm void SheepShear::jump_to_rom(register uint32 entry)
 
 
 #if !defined(__powerpc__) /* Emulated PowerPC */
-void Execute68k(uint32 pc, M68kRegisters *r)
-{
-	// Nop
-}
-
-void Execute68kTrap(uint16 trap, M68kRegisters *r)
-{
-	// Nop
-}
-
+// Execute68k and Execute68kTrap provided by kpx_cpu
 void QuitEmulator(void)
 {
 	// Nop
@@ -1324,7 +1317,7 @@ status_t SheepShear::tick_func(void *arg)
 /*
  *  Trigger signal USR1 from another thread
  */
-
+#if defined(__powerpc__) /* Native PowerPC */
 void TriggerInterrupt(void)
 {
 	idle_resume();
@@ -1335,6 +1328,7 @@ void TriggerInterrupt(void)
 		send_signal(the_app->emul_thread, SIGUSR1);
 #endif
 }
+#endif
 
 
 /*
@@ -1454,6 +1448,17 @@ static asm void ppc_interrupt(register uint32 entry)
 	blr
 }
 #endif
+
+
+/*
+ *  Return signal stack base
+ */
+uintptr SignalStackBase(void)
+{
+	#warning TODO: check signal stack base here!
+    return (uintptr)sig_stack + SIG_STACK_SIZE;
+}
+
 
 void SheepShear::sigusr1_handler(vregs *r)
 {

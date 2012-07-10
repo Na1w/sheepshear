@@ -646,11 +646,7 @@ void CheckLoad(uint32 type, const char *name, uint8 *p, uint32 size)
  *  Native Resource Manager patches
  */
 
-#ifdef __HAIKU__
-static
-#else
 extern "C"
-#endif
 void check_load_invoc(uint32 type, int16 id, uint32 h)
 {
 	if (h == 0)
@@ -663,11 +659,7 @@ void check_load_invoc(uint32 type, int16 id, uint32 h)
 	CheckLoad(type, id, (uint16 *)Mac2HostAddr(p), size);
 }
 
-#ifdef __HAIKU__
-static
-#else
 extern "C"
-#endif
 void named_check_load_invoc(uint32 type, uint32 name, uint32 h)
 {
 	if (h == 0)

@@ -97,7 +97,12 @@ extern void vm_exit(void);
    and default protection bits are read / write. The return value
    is the actual mapping address chosen or VM_MAP_FAILED for errors.  */
 
-extern void * vm_acquire(size_t size, int options = VM_MAP_DEFAULT);
+static void*
+vm_acquire(size_t size, int options = VM_MAP_DEFAULT)
+{
+	#warning TODO: This is a hack!
+	return (void*)malloc(size);
+}
 
 /* Allocate zero-filled memory at exactly ADDR (which must be page-aligned).
    Returns 0 if successful, -1 on errors.  */
@@ -106,8 +111,13 @@ extern int vm_acquire_fixed(void * addr, size_t size, int options = VM_MAP_DEFAU
 
 /* Deallocate any mapping for the region starting at ADDR and extending
    LEN bytes. Returns 0 if successful, -1 on errors.  */
+static int
+vm_release(void * addr, size_t size)
+{
+	free(addr);
+	return 0;
+}
 
-extern int vm_release(void * addr, size_t size);
 
 /* Change the memory protection of the region starting at ADDR and
    extending SIZE bytes to PROT. Returns 0 if successful, -1 for errors.  */

@@ -49,14 +49,16 @@ static const spinlock_t SPIN_LOCK_UNLOCKED = 0;
 
 static inline void spin_lock(spinlock_t *lock)
 {
-	acquire_spinlock(lock);
+	#warning TODO: acquire_spinlock properly!
+	//acquire_spinlock(lock);
 }
 
 
 static inline void
 spin_unlock(spinlock_t *lock)
 {
-	release_spinlock(lock);
+	#warning TODO: release_spinlock properly!
+	//release_spinlock(lock);
 }
 
 
