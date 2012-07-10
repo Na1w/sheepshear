@@ -35,7 +35,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "sigsegv.h"
+
 #include "user_strings_beos.h"
 
 
