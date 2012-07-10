@@ -790,9 +790,8 @@ extern void emul_ppc(uint32 start);
 extern void init_emul_ppc(void);
 void SheepShear::jump_to_rom(uint32 entry)
 {
-	#warning TODO: Important, init_emul_ppc!
-	//init_emul_ppc();
-	//emul_ppc(entry);
+	init_emul_ppc();
+	emul_ppc(entry);
 }
 #else
 asm void SheepShear::jump_to_rom(register uint32 entry)
