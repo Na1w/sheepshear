@@ -177,6 +177,7 @@ public:
 
 sheepshaver_cpu::sheepshaver_cpu()
 {
+	D(bug("%s: called\n", __func__));
 	init_decoder();
 
 #if PPC_ENABLE_JIT
@@ -218,6 +219,7 @@ typedef bit_field< 26, 31 > EMUL_OP_field;
 // Execute EMUL_OP routine
 void sheepshaver_cpu::execute_emul_op(uint32 emul_op)
 {
+	D(bug("%s: called\n", __func__));
 	M68kRegisters r68;
 	WriteMacInt32(XLM_68K_R25, gpr(25));
 	WriteMacInt32(XLM_RUN_MODE, MODE_EMUL_OP);
@@ -242,7 +244,7 @@ void sheepshaver_cpu::execute_emul_op(uint32 emul_op)
 // Execute SheepShaver instruction
 void sheepshaver_cpu::execute_sheep(uint32 opcode)
 {
-//	D(bug("Extended opcode %08x at %08x (68k pc %08x)\n", opcode, pc(), gpr(24)));
+	D(bug("Extended opcode %08x at %08x (68k pc %08x)\n", opcode, pc(), gpr(24)));
 	assert((((opcode >> 26) & 0x3f) == 6) && OP_MAX <= 64 + 3);
 
 	switch (opcode & 0x3f) {
@@ -455,6 +457,7 @@ int sheepshaver_cpu::compile1(codegen_context_t & cg_context)
 // Handle MacOS interrupt
 void sheepshaver_cpu::interrupt(uint32 entry)
 {
+	D(bug("%s: called\n", __func__));
 #if EMUL_TIME_STATS
 	ppc_interrupt_count++;
 	const clock_t interrupt_start = clock();
@@ -518,6 +521,7 @@ void sheepshaver_cpu::interrupt(uint32 entry)
 // Execute 68k routine
 void sheepshaver_cpu::execute_68k(uint32 entry, M68kRegisters *r)
 {
+	D(bug("%s: called\n", __func__));
 #if EMUL_TIME_STATS
 	exec68k_count++;
 	const clock_t exec68k_start = clock();
@@ -614,6 +618,7 @@ void sheepshaver_cpu::execute_68k(uint32 entry, M68kRegisters *r)
 // Call MacOS PPC code
 uint32 sheepshaver_cpu::execute_macos_code(uint32 tvect, int nargs, uint32 const *args)
 {
+	D(bug("%s: called\n", __func__));
 #if EMUL_TIME_STATS
 	macos_exec_count++;
 	const clock_t macos_exec_start = clock();
@@ -667,6 +672,8 @@ uint32 sheepshaver_cpu::execute_macos_code(uint32 tvect, int nargs, uint32 const
 // Execute ppc routine
 inline void sheepshaver_cpu::execute_ppc(uint32 entry)
 {
+	D(bug("%s: called\n", __func__));
+
 	// Save branch registers
 	uint32 saved_lr = lr();
 
@@ -683,6 +690,8 @@ inline void sheepshaver_cpu::execute_ppc(uint32 entry)
 // Resource Manager thunk
 inline void sheepshaver_cpu::get_resource(uint32 old_get_resource)
 {
+	D(bug("%s: called\n", __func__));
+
 	uint32 type = gpr(3);
 	int16 id = gpr(4);
 
@@ -718,12 +727,14 @@ void FlushCodeCache(uintptr start, uintptr end)
 // Dump PPC registers
 static void dump_registers(void)
 {
+	D(bug("%s: called\n", __func__));
 	ppc_cpu->dump_registers();
 }
 
 // Dump log
 static void dump_log(void)
 {
+	D(bug("%s: called\n", __func__));
 	ppc_cpu->dump_log();
 }
 
@@ -733,6 +744,7 @@ static void dump_log(void)
 
 sigsegv_return_t sigsegv_handler(sigsegv_info_t *sip)
 {
+	D(bug("%s: called\n", __func__));
 #if ENABLE_VOSF
 	// Handle screen fault
 	extern bool Screen_fault_handler(sigsegv_info_t *sip);
@@ -803,6 +815,7 @@ sigsegv_return_t sigsegv_handler(sigsegv_info_t *sip)
 
 void init_emul_ppc(void)
 {
+	D(bug("%s: called\n", __func__));
 	// Get pointer to KernelData in host address space
 	kernel_data = (KernelData *)Mac2HostAddr(KERNEL_DATA_BASE);
 
@@ -830,6 +843,7 @@ void init_emul_ppc(void)
 
 void exit_emul_ppc(void)
 {
+	D(bug("%s: called\n", __func__));
 #if EMUL_TIME_STATS
 	clock_t emul_end_time = clock();
 
@@ -864,6 +878,7 @@ void exit_emul_ppc(void)
 // Initialize EmulOp trampolines
 void init_emul_op_trampolines(basic_dyngen & dg)
 {
+	D(bug("%s: called\n", __func__));
 	typedef void (*func_t)(dyngen_cpu_base, uint32);
 	func_t func;
 
@@ -892,6 +907,7 @@ void init_emul_op_trampolines(basic_dyngen & dg)
 
 void emul_ppc(uint32 entry)
 {
+	D(bug("%s: called\n", __func__));
 	if (PrefsFindBool("ppcinslog"))
 		ppc_cpu->start_log();
 
@@ -905,6 +921,7 @@ void emul_ppc(uint32 entry)
 
 void TriggerInterrupt(void)
 {
+	D(bug("%s: called\n", __func__));
 	idle_resume();
 #if 0
   WriteMacInt32(0x16a, ReadMacInt32(0x16a) + 1);
@@ -917,6 +934,7 @@ void TriggerInterrupt(void)
 
 void HandleInterrupt(powerpc_registers *r)
 {
+	D(bug("%s: called\n", __func__));
 #ifdef USE_SDL_VIDEO
 	// We must fill in the events queue in the same thread that did call SDL_SetVideoMode()
 	SDL_PumpEvents();
@@ -1005,6 +1023,7 @@ void HandleInterrupt(powerpc_registers *r)
 // Execute NATIVE_OP routine
 void sheepshaver_cpu::execute_native_op(uint32 selector)
 {
+	D(bug("%s: called\n", __func__));
 #if EMUL_TIME_STATS
 	native_exec_count++;
 	const clock_t native_exec_start = clock();
@@ -1145,6 +1164,7 @@ void sheepshaver_cpu::execute_native_op(uint32 selector)
 
 void Execute68k(uint32 pc, M68kRegisters *r)
 {
+	D(bug("%s: called\n", __func__));
 	ppc_cpu->execute_68k(pc, r);
 }
 
@@ -1155,6 +1175,7 @@ void Execute68k(uint32 pc, M68kRegisters *r)
 
 void Execute68kTrap(uint16 trap, M68kRegisters *r)
 {
+	D(bug("%s: called\n", __func__));
 	SheepVar proc_var(4);
 	uint32 proc = proc_var.addr();
 	WriteMacInt16(proc, trap);
@@ -1168,47 +1189,55 @@ void Execute68kTrap(uint16 trap, M68kRegisters *r)
  */
 uint32 call_macos(uint32 tvect)
 {
+	D(bug("%s: called\n", __func__));
 	return ppc_cpu->execute_macos_code(tvect, 0, NULL);
 }
 
 uint32 call_macos1(uint32 tvect, uint32 arg1)
 {
+	D(bug("%s: called\n", __func__));
 	const uint32 args[] = { arg1 };
 	return ppc_cpu->execute_macos_code(tvect, sizeof(args)/sizeof(args[0]), args);
 }
 
 uint32 call_macos2(uint32 tvect, uint32 arg1, uint32 arg2)
 {
+	D(bug("%s: called\n", __func__));
 	const uint32 args[] = { arg1, arg2 };
 	return ppc_cpu->execute_macos_code(tvect, sizeof(args)/sizeof(args[0]), args);
 }
 
 uint32 call_macos3(uint32 tvect, uint32 arg1, uint32 arg2, uint32 arg3)
 {
+	D(bug("%s: called\n", __func__));
 	const uint32 args[] = { arg1, arg2, arg3 };
 	return ppc_cpu->execute_macos_code(tvect, sizeof(args)/sizeof(args[0]), args);
 }
 
 uint32 call_macos4(uint32 tvect, uint32 arg1, uint32 arg2, uint32 arg3, uint32 arg4)
 {
+	D(bug("%s: called\n", __func__));
 	const uint32 args[] = { arg1, arg2, arg3, arg4 };
 	return ppc_cpu->execute_macos_code(tvect, sizeof(args)/sizeof(args[0]), args);
 }
 
 uint32 call_macos5(uint32 tvect, uint32 arg1, uint32 arg2, uint32 arg3, uint32 arg4, uint32 arg5)
 {
+	D(bug("%s: called\n", __func__));
 	const uint32 args[] = { arg1, arg2, arg3, arg4, arg5 };
 	return ppc_cpu->execute_macos_code(tvect, sizeof(args)/sizeof(args[0]), args);
 }
 
 uint32 call_macos6(uint32 tvect, uint32 arg1, uint32 arg2, uint32 arg3, uint32 arg4, uint32 arg5, uint32 arg6)
 {
+	D(bug("%s: called\n", __func__));
 	const uint32 args[] = { arg1, arg2, arg3, arg4, arg5, arg6 };
 	return ppc_cpu->execute_macos_code(tvect, sizeof(args)/sizeof(args[0]), args);
 }
 
 uint32 call_macos7(uint32 tvect, uint32 arg1, uint32 arg2, uint32 arg3, uint32 arg4, uint32 arg5, uint32 arg6, uint32 arg7)
 {
+	D(bug("%s: called\n", __func__));
 	const uint32 args[] = { arg1, arg2, arg3, arg4, arg5, arg6, arg7 };
 	return ppc_cpu->execute_macos_code(tvect, sizeof(args)/sizeof(args[0]), args);
 }
