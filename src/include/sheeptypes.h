@@ -54,13 +54,13 @@
 #define SIZEOF_SHORT 2
 #define SIZEOF_INT 4
 #define SIZEOF_LONG 4
-#define SIZEOF_LONG_LONG 0
+#define SIZEOF_LONG_LONG 8
 #define SIZEOF_VOID_P 4
 #elif defined(_LP32) || defined(__LP32__)
 #define SIZEOF_SHORT 2
 #define SIZEOF_INT 2
 #define SIZEOF_LONG 4
-#define SIZEOF_LONG_LONG 0
+#define SIZEOF_LONG_LONG 8
 #define SIZEOF_VOID_P 4
 #else
 #error Set datatype size detection for compiler
