@@ -178,12 +178,12 @@ const uint32 SIG_STACK_SIZE = 0x10000;		// Size of signal stack
 void *TOC = NULL;		// Pointer to Thread Local Storage (r2)
 void *R13 = NULL;		// Pointer to .sdata section (r13 under Linux)
 #endif
-uint32 RAMBase;			// Base address of Mac RAM
+uintptr RAMBase;		// Base address of Mac RAM
 uint32 RAMSize;			// Size of Mac RAM
-uint32 ROMBase;			// Base address of Mac ROM
-uint32 KernelDataAddr;	// Address of Kernel Data
-uint32 BootGlobsAddr;	// Address of BootGlobs structure at top of Mac RAM
-uint32 DRCacheAddr;		// Address of DR Cache
+uintptr ROMBase;		// Base address of Mac ROM
+uintptr KernelDataAddr;	// Address of Kernel Data
+uintptr BootGlobsAddr;	// Address of BootGlobs structure at top of Mac RAM
+uintptr DRCacheAddr;		// Address of DR Cache
 uint32 PVR;				// Theoretical PVR
 int64 CPUClockSpeed;	// Processor clock speed (Hz)
 int64 BusClockSpeed;	// Bus clock speed (Hz)

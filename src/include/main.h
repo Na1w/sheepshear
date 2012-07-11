@@ -20,9 +20,9 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-
 #include "adb.h"
 #include "audio.h"
+#include "sheeptypes.h"
 #include "video.h"
 #include "xpram.h"
 
@@ -34,8 +34,8 @@ extern MacPRAM *gMacPRAM;		// Mac pram driver
 extern MacVideo *gMacVideo;		// Mac video driver
 extern void *TOC;				// TOC pointer
 extern void *R13;				// r13 register
-extern uint32 KernelDataAddr;	// Address of Kernel Data
-extern uint32 BootGlobsAddr;	// Address of BootGlobs structure at top of Mac RAM
+extern uintptr KernelDataAddr;	// Address of Kernel Data
+extern uintptr BootGlobsAddr;	// Address of BootGlobs structure at top of Mac RAM
 extern uint32 PVR;				// Theoretical PVR
 extern int64 CPUClockSpeed;		// Processor clock speed (Hz)
 extern int64 BusClockSpeed;		// Bus clock speed (Hz)
