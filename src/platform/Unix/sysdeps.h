@@ -30,7 +30,8 @@
 #endif
 
 #include "config.h"
-
+#include "sheeptypes.h"
+ 
 #ifndef STDC_HEADERS
 #error "You don't have ANSI C header files."
 #endif
@@ -134,96 +135,6 @@
 #endif
 #endif
 
-
-/*
- * Set datatype sizes
- * Should work for most common compilers
- */
-#if defined(__SIZEOF_LONG__)
-#define SIZEOF_SHORT __SIZEOF_SHORT__
-#define SIZEOF_INT __SIZEOF_INT__
-#define SIZEOF_LONG __SIZEOF_LONG__
-#define SIZEOF_LONG_LONG __SIZEOF_LONG_LONG__
-#define SIZEOF_VOID_P __SIZEOF_POINTER__
-#elif defined(_LP64)
-#define SIZEOF_SHORT 16
-#define SIZEOF_INT 32
-#define SIZEOF_LONG 64
-#define SIZEOF_LONG_LONG 0
-#define SIZEOF_VOID_P 64
-#elif defined(_ILP64)
-#define SIZEOF_SHORT 16
-#define SIZEOF_INT 64
-#define SIZEOF_LONG 64
-#define SIZEOF_LONG_LONG 0
-#define SIZEOF_VOID_P 64
-#elif defined(_LLP64)
-#define SIZEOF_SHORT 16
-#define SIZEOF_INT 32
-#define SIZEOF_LONG 32
-#define SIZEOF_LONG_LONG 64
-#define SIZEOF_VOID_P 64
-#elif defined(_ILP32)
-#define SIZEOF_SHORT 16
-#define SIZEOF_INT 32
-#define SIZEOF_LONG 32
-#define SIZEOF_LONG_LONG 0
-#define SIZEOF_VOID_P 32
-#elif defined(_LP32)
-#define SIZEOF_SHORT 16
-#define SIZEOF_INT 16
-#define SIZEOF_LONG 32
-#define SIZEOF_LONG_LONG 0
-#define SIZEOF_VOID_P 32
-#else
-#error Set datatype size detection for compiler
-#endif
-
-typedef unsigned char uint8;
-typedef signed char int8;
-#if SIZEOF_SHORT == 2
-typedef unsigned short uint16;
-typedef short int16;
-#elif SIZEOF_INT == 2
-typedef unsigned int uint16;
-typedef int int16;
-#else
-#error "No 2 byte type, you lose."
-#endif
-
-#if SIZEOF_INT == 4
-typedef unsigned int uint32;
-typedef int int32;
-#elif SIZEOF_LONG == 4
-typedef unsigned long uint32;
-typedef long int32;
-#else
-#error "No 4 byte type, you lose."
-#endif
-
-#if SIZEOF_LONG == 8
-typedef unsigned long uint64;
-typedef long int64;
-#define VAL64(a) (a ## l)
-#define UVAL64(a) (a ## ul)
-#elif SIZEOF_LONG_LONG == 8
-typedef unsigned long long uint64;
-typedef long long int64;
-#define VAL64(a) (a ## LL)
-#define UVAL64(a) (a ## uLL)
-#else
-#error "No 8 byte type, you lose."
-#endif
-
-#if SIZEOF_VOID_P == 4
-typedef uint32 uintptr;
-typedef int32 intptr;
-#elif SIZEOF_VOID_P == 8
-typedef uint64 uintptr;
-typedef int64 intptr;
-#else
-#error "Unsupported size of pointer"
-#endif
 
 // Define if the host processor supports fast unaligned load/stores
 #if defined __i386__ || defined __x86_64__
