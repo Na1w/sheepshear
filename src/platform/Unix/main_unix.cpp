@@ -110,6 +110,7 @@
 #include "rom_patches.h"
 #include "user_strings.h"
 #include "vm_alloc.h"
+#include "sheeplock.h"
 #include "sigsegv.h"
 #include "sigregs.h"
 #include "rpc.h"
@@ -191,15 +192,16 @@ int64 TimebaseSpeed;	// Timebase clock speed (Hz)
 uint8 *RAMBaseHost;		// Base address of Mac RAM (host address space)
 uint8 *ROMBaseHost;		// Base address of Mac ROM (host address space)
 
+// Global spinlocks
+SpinLock* gAtomicLock;		// Atomic function spinlocks
+SpinLock* gIdleLock;		// Timer idle spinlock
 
 // Global variables
 #ifndef USE_SDL_VIDEO
 char *x_display_name = NULL;				// X11 display name
 Display *x_display = NULL;					// X11 display handle
-#ifdef X11_LOCK_TYPE
-X11_LOCK_TYPE x_display_lock = X11_LOCK_INIT; // X11 display lock
 #endif
-#endif
+
 
 static int zero_fd = 0;						// FD of /dev/zero
 static bool lm_area_mapped = false;			// Flag: Low Memory area mmap()ped
@@ -285,7 +287,6 @@ extern void paranoia_check(void);
 #endif
 
 
-#if !defined(__powerpc__) /* Emulated PowerPC */
 /*
  *  Return signal stack base
  */
@@ -298,40 +299,32 @@ uintptr SignalStackBase(void)
 /*
  *  Atomic operations
  */
-#if HAVE_SPINLOCKS
-static spinlock_t atomic_ops_lock = SPIN_LOCK_UNLOCKED;
-#else
-#define spin_lock(LOCK)
-#define spin_unlock(LOCK)
-#endif
-
 int atomic_add(int *var, int v)
 {
-	spin_lock(&atomic_ops_lock);
+	gAtomicLock->Lock();
 	int ret = *var;
 	*var += v;
-	spin_unlock(&atomic_ops_lock);
+	gAtomicLock->Unlock();
 	return ret;
 }
 
 int atomic_and(int *var, int v)
 {
-	spin_lock(&atomic_ops_lock);
+	gAtomicLock->Lock();
 	int ret = *var;
 	*var &= v;
-	spin_unlock(&atomic_ops_lock);
+	gAtomicLock->Unlock();
 	return ret;
 }
 
 int atomic_or(int *var, int v)
 {
-	spin_lock(&atomic_ops_lock);
+	gAtomicLock->Lock();
 	int ret = *var;
 	*var |= v;
-	spin_unlock(&atomic_ops_lock);
+	gAtomicLock->Unlock();
 	return ret;
 }
-#endif
 
 
 /*
@@ -352,6 +345,25 @@ static inline int vm_mac_acquire_fixed(uint32 addr, uint32 size)
 static inline int vm_mac_release(uint32 addr, uint32 size)
 {
 	return vm_release(Mac2HostAddr(addr), size);
+}
+
+
+/*
+ * Init global spinlocks
+ */
+static void
+create_spinlocks()
+{
+	gAtomicLock = new SpinLock;
+	gIdleLock = new SpinLock;
+}
+
+
+static void
+destroy_spinlocks()
+{
+	delete gAtomicLock;
+	delete gIdleLock;
 }
 
 
@@ -792,6 +804,9 @@ int main(int argc, char **argv)
 	}
 #endif
 
+	// Create global spinlocks
+	create_spinlocks();
+
 	// Read preferences
 	PrefsInit(vmdir, argc, argv);
 
@@ -1129,6 +1144,9 @@ static void Quit(void)
 	// Close /dev/zero
 	if (zero_fd > 0)
 		close(zero_fd);
+
+	// Delete global spinlocks
+	destroy_spinlocks();
 
 	// Exit system routines
 	SysExit();

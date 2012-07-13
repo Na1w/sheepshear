@@ -171,33 +171,10 @@ static XF86VidModeModeInfo **x_video_modes;		// Array of all available modes
 static int num_x_video_modes;
 #endif
 
-// Mutex to protect palette
-#if defined(HAVE_PTHREADS)
-static pthread_mutex_t x_palette_lock = PTHREAD_MUTEX_INITIALIZER;
-#define LOCK_PALETTE pthread_mutex_lock(&x_palette_lock)
-#define UNLOCK_PALETTE pthread_mutex_unlock(&x_palette_lock)
-#elif defined(HAVE_SPINLOCKS)
-static spinlock_t x_palette_lock = SPIN_LOCK_UNLOCKED;
-#define LOCK_PALETTE spin_lock(&x_palette_lock)
-#define UNLOCK_PALETTE spin_unlock(&x_palette_lock)
-#else
-#define LOCK_PALETTE
-#define UNLOCK_PALETTE
-#endif
-
-// Mutex to protect frame buffer
-#if defined(HAVE_PTHREADS)
-static pthread_mutex_t frame_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
-#define LOCK_FRAME_BUFFER pthread_mutex_lock(&frame_buffer_lock);
-#define UNLOCK_FRAME_BUFFER pthread_mutex_unlock(&frame_buffer_lock);
-#elif defined(HAVE_SPINLOCKS)
-static spinlock_t frame_buffer_lock = SPIN_LOCK_UNLOCKED;
-#define LOCK_FRAME_BUFFER spin_lock(&frame_buffer_lock)
-#define UNLOCK_FRAME_BUFFER spin_unlock(&frame_buffer_lock)
-#else
-#define LOCK_FRAME_BUFFER
-#define UNLOCK_FRAME_BUFFER
-#endif
+// Spinlocks
+SpinLock* gPaletteLock;		// X Palette spinlock
+SpinLock* gFrameBufferLock;	// X FB spinlock
+SpinLock* gDisplayLock;		// X Display spinlock
 
 
 // Prototypes
@@ -1367,6 +1344,10 @@ static bool has_mode(int x, int y)
 bool
 PlatformVideo::DeviceInit(void)
 {
+	gDisplayLock = new SpinLock;
+	gFrameBufferLock = new SpinLock;
+	gPaletteLock = new SpinLock;
+
 #ifdef ENABLE_VOSF
 	// Zero the mainBuffer structure
 	mainBuffer.dirtyPages = NULL;
@@ -1663,7 +1644,7 @@ PlatformVideo::DeviceInit(void)
 
 	// Lock down frame buffer
 	XSync(x_display, false);
-	LOCK_FRAME_BUFFER;
+	gFrameBufferLock->Lock();
 
 	// Start periodic thread
 	XSync(x_display, false);
@@ -1697,7 +1678,7 @@ PlatformVideo::DeviceShutdown(void)
 	}
 
 	// Unlock frame buffer
-	UNLOCK_FRAME_BUFFER;
+	gFrameBufferLock->Unlock();
 	XSync(x_display, false);
 	D(bug(" frame buffer unlocked\n"));
 
@@ -1723,6 +1704,11 @@ PlatformVideo::DeviceShutdown(void)
 		fb_dev_fd = -1;
 	}
 #endif
+
+	// Destroy spinlocks
+	delete gDisplayLock;
+	delete gFrameBufferLock;
+	delete gPaletteLock;
 }
 
 
@@ -1780,7 +1766,7 @@ static void suspend_emul(void)
 		ctrl_down = false;
 
 		// Lock frame buffer (this will stop the MacOS thread)
-		LOCK_FRAME_BUFFER;
+		gFrameBufferLock->Lock();
 
 		// Save frame buffer
 		fb_save = malloc(VModes[cur_mode].viYsize * VModes[cur_mode].viRowBytes);
@@ -1863,7 +1849,7 @@ static void resume_emul(void)
 	}
 
 	// Unlock frame buffer (and continue MacOS thread)
-	UNLOCK_FRAME_BUFFER;
+	gFrameBufferLock->Unlock();
 	emul_suspended = false;
 }
 
@@ -2052,7 +2038,7 @@ static void handle_events(void)
 	for (;;) {
 		XEvent event;
 
-		XDisplayLock();
+		gDisplayLock->Lock();
 		if (!XCheckMaskEvent(x_display, eventmask, &event)) {
 			// Handle clipboard events
 			if (XCheckTypedEvent(x_display, SelectionRequest, &event))
@@ -2068,10 +2054,10 @@ static void handle_events(void)
 				}
 			}
 
-			XDisplayUnlock();
+			gDisplayLock->Unlock();
 			break;
 		}
-		XDisplayUnlock();
+		gDisplayLock->Unlock();
 
 		switch (event.type) {
 			// Mouse button
@@ -2185,8 +2171,8 @@ PlatformVideo::DeviceInterrupt(void)
 
 	// Temporarily give up frame buffer lock (this is the point where
 	// we are suspended when the user presses Ctrl-Tab)
-	UNLOCK_FRAME_BUFFER;
-	LOCK_FRAME_BUFFER;
+	gFrameBufferLock->Unlock();
+	gFrameBufferLock->Lock();
 
 	// Execute video VBL
 	if (private_data != NULL && private_data->interruptsEnabled)
@@ -2253,7 +2239,7 @@ PlatformVideo::ModeChange(VidLocals *csSave, uint32 ParamPtr)
 
 void video_set_palette(void)
 {
-	LOCK_PALETTE;
+	gPaletteLock->Lock();
 
 	// Convert colors to XColor array
 	int mode = get_current_mode();
@@ -2294,7 +2280,7 @@ void video_set_palette(void)
 	// Tell redraw thread to change palette
 	palette_changed = true;
 
-	UNLOCK_PALETTE;
+	gPaletteLock->Unlock();
 }
 
 
@@ -2431,12 +2417,12 @@ static void update_display(void)
 
 	// Refresh display
 	if (high && wide) {
-		XDisplayLock();
+		gDisplayLock->Lock();
 		if (have_shm)
 			XShmPutImage(x_display, the_win, the_gc, img, x1, y1, x1, y1, wide, high, 0);
 		else
 			XPutImage(x_display, the_win, the_gc, img, x1, y1, x1, y1, wide, high);
-		XDisplayUnlock();
+		gDisplayLock->Unlock();
 	}
 }
 
@@ -2445,7 +2431,7 @@ const int VIDEO_REFRESH_DELAY = 1000000 / VIDEO_REFRESH_HZ;
 
 static void handle_palette_changes(void)
 {
-	LOCK_PALETTE;
+	gPaletteLock->Lock();
 
 	if (palette_changed && !emul_suspended) {
 		palette_changed = false;
@@ -2460,11 +2446,11 @@ static void handle_palette_changes(void)
 			}
 
 			if (set_clut) {
-				XDisplayLock();
+				gDisplayLock->Lock();
 				XStoreColors(x_display, cmap[0], x_palette, num);
 				XStoreColors(x_display, cmap[1], x_palette, num);
 				XSync(x_display, false);
-				XDisplayUnlock();
+				gDisplayLock->Unlock();
 			}
 		}
 
@@ -2477,7 +2463,7 @@ static void handle_palette_changes(void)
 #endif
 	}
 
-	UNLOCK_PALETTE;
+	gPaletteLock->Unlock();
 }
 
 static void *redraw_func(void *arg)
@@ -2515,7 +2501,7 @@ static void *redraw_func(void *arg)
 			if (quit_full_screen) {
 				quit_full_screen = false;
 				if (display_type == DISPLAY_SCREEN) {
-					XDisplayLock();
+					gDisplayLock->Lock();
 #if defined(ENABLE_XF86_DGA) || defined(ENABLE_FBDEV_DGA)
 #ifdef ENABLE_XF86_DGA
 					if (!is_fbdev_dga_mode)
@@ -2528,7 +2514,7 @@ static void *redraw_func(void *arg)
 					XDestroyWindow(x_display, the_win);
 #endif
 					XSync(x_display, false);
-					XDisplayUnlock();
+					gDisplayLock->Unlock();
 					quit_full_screen_ack = true;
 					return NULL;
 				}
@@ -2544,14 +2530,14 @@ static void *redraw_func(void *arg)
 					// Update display
 #ifdef ENABLE_VOSF
 					if (use_vosf) {
-						XDisplayLock();
+						gDisplayLock->Lock();
 						if (mainBuffer.dirty) {
 							LOCK_VOSF;
 							update_display_window_vosf();
 							UNLOCK_VOSF;
 							XSync(x_display, false); // Let the server catch up
 						}
-						XDisplayUnlock();
+						gDisplayLock->Unlock();
 					}
 					else
 #endif
@@ -2566,13 +2552,13 @@ static void *redraw_func(void *arg)
 							x_mask[i] = MacCursor[4 + i] | MacCursor[36 + i];
 							x_data[i] = MacCursor[4 + i];
 						}
-						XDisplayLock();
+						gDisplayLock->Lock();
 						XFreeCursor(x_display, mac_cursor);
 						XPutImage(x_display, cursor_map, cursor_gc, cursor_image, 0, 0, 0, 0, 16, 16);
 						XPutImage(x_display, cursor_mask_map, cursor_mask_gc, cursor_mask_image, 0, 0, 0, 0, 16, 16);
 						mac_cursor = XCreatePixmapCursor(x_display, cursor_map, cursor_mask_map, &black, &white, MacCursor[2], MacCursor[3]);
 						XDefineCursor(x_display, the_win, mac_cursor);
-						XDisplayUnlock();
+						gDisplayLock->Unlock();
 					}
 				}
 			}

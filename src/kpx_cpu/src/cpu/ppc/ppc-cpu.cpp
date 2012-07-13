@@ -563,6 +563,7 @@ void *powerpc_cpu::compile_chain_block(block_info *sbi)
 
 void powerpc_cpu::execute(uint32 entry)
 {
+	D(bug("%s: entry 0x%X\n", __func__, entry))
 	bool invalidated_cache = false;
 	pc() = entry;
 #if PPC_EXECUTE_DUMP_STATE

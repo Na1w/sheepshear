@@ -18,11 +18,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include "sysdeps.h"
 #include "macos_util.h"
+#include "sheeplock.h"
 #include "timer.h"
 
 #include <errno.h>
+#include <semaphore.h>
+
 
 #define DEBUG 0
 #include "debug.h"
@@ -329,52 +333,25 @@ void Delay_usec(uint32 usec)
 /*
  *  Suspend emulator thread, virtual CPU in idle mode
  */
-
-#ifdef HAVE_PTHREADS
-#if defined(HAVE_PTHREAD_COND_INIT)
-#define IDLE_USES_COND_WAIT 1
-static pthread_mutex_t idle_lock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t idle_cond = PTHREAD_COND_INITIALIZER;
-#elif defined(HAVE_SEM_INIT)
-#define IDLE_USES_SEMAPHORE 1
-#include <semaphore.h>
-#ifdef HAVE_SPINLOCKS
-static spinlock_t idle_lock = SPIN_LOCK_UNLOCKED;
-#define LOCK_IDLE spin_lock(&idle_lock)
-#define UNLOCK_IDLE spin_unlock(&idle_lock)
-#else
-static pthread_mutex_t idle_lock = PTHREAD_MUTEX_INITIALIZER;
-#define LOCK_IDLE pthread_mutex_lock(&idle_lock)
-#define UNLOCK_IDLE pthread_mutex_unlock(&idle_lock)
-#endif
+extern SpinLock* gIdleLock;
 static sem_t idle_sem;
 static int idle_sem_ok = -1;
-#endif
-#endif
 
 void idle_wait(void)
 {
-#ifdef IDLE_USES_COND_WAIT
-	pthread_mutex_lock(&idle_lock);
-	pthread_cond_wait(&idle_cond, &idle_lock);
-	pthread_mutex_unlock(&idle_lock);
-#else
-#ifdef IDLE_USES_SEMAPHORE
-	LOCK_IDLE;
+	gIdleLock->Lock();
 	if (idle_sem_ok < 0)
 		idle_sem_ok = (sem_init(&idle_sem, 0, 0) == 0);
 	if (idle_sem_ok > 0) {
 		idle_sem_ok++;
-		UNLOCK_IDLE;
+		gIdleLock->Unlock();
 		sem_wait(&idle_sem);
 		return;
 	}
-	UNLOCK_IDLE;
-#endif
+	gIdleLock->Unlock();
 
 	// Fallback: sleep 10 ms
 	Delay_usec(10000);
-#endif
 }
 
 
@@ -384,18 +361,12 @@ void idle_wait(void)
 
 void idle_resume(void)
 {
-#ifdef IDLE_USES_COND_WAIT
-	pthread_cond_signal(&idle_cond);
-#else
-#ifdef IDLE_USES_SEMAPHORE
-	LOCK_IDLE;
+	gIdleLock->Lock();
 	if (idle_sem_ok > 1) {
 		idle_sem_ok--;
-		UNLOCK_IDLE;
+		gIdleLock->Unlock();
 		sem_post(&idle_sem);
 		return;
 	}
-	UNLOCK_IDLE;
-#endif
-#endif
+	gIdleLock->Unlock();
 }

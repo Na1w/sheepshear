@@ -65,6 +65,7 @@
 #include "cpu_emulation.h"
 #include "main.h"
 #include "emul_op.h"
+#include "platform_video.h"
 
 #define DEBUG 0
 #include "debug.h"
@@ -251,9 +252,10 @@ static bool wait_for_selection_notify_event(Display *dpy, Window win, XEvent *ev
 
 	do {
 		// Wait
-		XDisplayUnlock();
+		gDisplayLock->Unlock();
 		Delay_usec(5000);
-		XDisplayLock();
+		gDisplayLock->Lock();
+
 
 		// Check for SelectionNotify event
 		if (XCheckTypedWindowEvent(dpy, win, SelectionNotify, event))
@@ -315,9 +317,9 @@ void PutScrap(uint32 type, void *scrap, int32 length)
 	if (length <= 0)
 		return;
 
-	XDisplayLock();
+	gDisplayLock->Lock();
 	do_putscrap(type, scrap, length);
-	XDisplayUnlock();
+	gDisplayLock->Unlock();
 }
 
 static void do_putscrap(uint32 type, void *scrap, int32 length)
@@ -383,9 +385,9 @@ void GetScrap(void **handle, uint32 type, int32 offset)
 {
 	D(bug("GetScrap handle %p, type %08x, offset %d\n", handle, type, offset));
 
-	XDisplayLock();
+	gDisplayLock->Lock();
 	do_getscrap(handle, type, offset);
-	XDisplayUnlock();
+	gDisplayLock->Unlock();
 }
 
 static void do_getscrap(void **handle, uint32 type, int32 offset)

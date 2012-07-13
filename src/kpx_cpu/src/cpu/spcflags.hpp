@@ -21,13 +21,13 @@
 #define SPCFLAGS_H
 
 
+#include "sheeplock.h"
 #include "sigsegv.h"
 
 
 /**
  *		Basic special flags
  **/
-
 enum {
 	SPCFLAG_CPU_EXEC_RETURN			= 1 << 0,	// Return from emulation loop
 	SPCFLAG_CPU_TRIGGER_INTERRUPT	= 1 << 1,	// Trigger user interrupt
@@ -36,15 +36,16 @@ enum {
 	SPCFLAG_JIT_EXEC_RETURN			= 1 << 4,	// Return from compiled code
 };
 
+
 class basic_spcflags
 {
 	uint32 mask;
-	spinlock_t lock;
+	SpinLock *spin;
 
 public:
 
 	basic_spcflags()
-		: mask(0), lock(SPIN_LOCK_UNLOCKED)
+		: mask(0)
 		{ }
 
 	bool empty() const
@@ -54,16 +55,17 @@ public:
 		{ return (mask & v); }
 
 	void init(uint32 v)
-		{ spin_lock(&lock); mask = v; spin_unlock(&lock); }
+		{ spin = new SpinLock; spin->Lock(); mask = v; spin->Unlock(); }
 
 	uint32 get() const
 		{ return mask; }
 
 	void set(uint32 v)
-		{ spin_lock(&lock); mask |= v; spin_unlock(&lock); }
+		{ spin->Lock(); mask |= v; spin->Unlock(); }
 
 	void clear(uint32 v)
-		{ spin_lock(&lock); mask &= ~v; spin_unlock(&lock); }
+		{ spin->Lock(); mask &= ~v; spin->Unlock(); }
 };
+
 
 #endif /* SPCFLAGS_H */

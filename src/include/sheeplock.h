@@ -1,7 +1,7 @@
 /*
- *  platform_video.h - Video platform defines
+ *  sheeptypes.h - simple spinlock wrappers
  *
- *  SheepShear, 2012 Alexander von Gluck IV
+ *  SheepShear, 2012 Alexander von Gluck
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,33 +17,32 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#ifndef _PLATFORM_VIDEO_H
-#define _PLATFORM_VIDEO_H
+#ifndef __SHEEPLOCKS_H
+#define __SHEEPLOCKS_H
 
 
-#include "video_defs.h"
-#include "sheeplock.h"
+#define HAVE_SPINLOCKS 1
+
+ 
+typedef volatile int spinlock_t;
+
+static const spinlock_t SPIN_LOCK_UNLOCKED = 0;
+
+#define atomic_cmp_set(a,b,c) __sync_bool_compare_and_swap(a,b,c)
+#define atomic_add_fetch(a,b,c) __sync_add_and_fetch(a,b,c)
+#define HAVE_SPINLOCKS 1
 
 
-extern SpinLock* gDisplayLock;
-
-
-class PlatformVideo
+class SpinLock
 {
 public:
-		// Required for PlatformVideo class
-		bool				DeviceInit();
-		void				DeviceShutdown();
-		bool				DeviceOpen();
-		void				DeviceClose();
-		void				DeviceInterrupt();
-
-		void				InstallAccel();
-
-		void				DeviceQuitFullScreen();
-protected:
-		int16				ModeChange(VidLocals *csSave, uint32 ParamPtr);
+    SpinLock() : spinLock(SPIN_LOCK_UNLOCKED) {}
+    void Lock() { while (!atomic_cmp_set(&spinLock, 0, 1)); }
+    void Unlock() { spinLock = 0; }
+    int TryLock() { return atomic_cmp_set(&spinLock, 0, 1); }
+private:
+    spinlock_t spinLock;
 };
 
 
-#endif /* _PLATFORM_VIDEO */
+#endif /* __SHEEPLOCKS_H */

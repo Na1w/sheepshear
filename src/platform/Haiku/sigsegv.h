@@ -24,9 +24,6 @@
 #include <KernelExport.h>
 
 
-#define HAVE_SPINLOCKS 1
-
-
 // Signal handling
 typedef char *sigsegv_address_t;
 
@@ -41,32 +38,6 @@ enum sigsegv_return_t {
 	SIGSEGV_RETURN_FAILURE,
 	SIGSEGV_RETURN_SKIP_INSTRUCTION
 };
-
-typedef volatile long spinlock_t;
-
-static const spinlock_t SPIN_LOCK_UNLOCKED = 0;
-
-
-static inline void spin_lock(spinlock_t *lock)
-{
-	#warning TODO: acquire_spinlock properly!
-	//acquire_spinlock(lock);
-}
-
-
-static inline void
-spin_unlock(spinlock_t *lock)
-{
-	#warning TODO: release_spinlock properly!
-	//release_spinlock(lock);
-}
-
-
-static inline int
-spin_trylock(spinlock_t *lock)
-{
-	return 1;
-}
 
 
 // Return the address of the invalid memory reference
