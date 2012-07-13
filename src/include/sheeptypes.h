@@ -26,6 +26,10 @@
  * All SIZEOF_X defines are in bytes
  * Should work for most common compilers
  */
+#if defined(__HAIKU__)
+#include <SupportDefs.h>
+#else
+
 #if defined(__SIZEOF_LONG__)
 #define SIZEOF_SHORT __SIZEOF_SHORT__
 #define SIZEOF_INT __SIZEOF_INT__
@@ -120,5 +124,7 @@ typedef int64 intptr;
 #error "Unsupported size of pointer"
 #endif
 
+
+#endif /* !HAIKU */
 
 #endif /* __SHEEPTYPES_H */
