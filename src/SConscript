@@ -101,7 +101,7 @@ else:
 
 
 ppc_cpu_impl = env.Command('ppc-execute-impl.cpp', '#/src/kpx_cpu/src/cpu/ppc/ppc-decode.cpp',
-	'$CC -E $_CPPINCFLAGS -DGENEXEC $SOURCE | perl src/kpx_cpu/src/cpu/ppc/genexec.pl > $TARGET')
+	'$CXX -E $_CPPINCFLAGS $CPPFLAGS $CCFLAGS -DGENEXEC $SOURCE | perl src/kpx_cpu/src/cpu/ppc/genexec.pl > $TARGET')
 
 dyngen = env.Program('dyngen', ['#/src/kpx_cpu/src/cpu/jit/dyngen.c','#/src/kpx_cpu/src/cpu/jit/cxxdemangle.cpp'])
 #env.Command('src-list.txt', dyngen, '$SOURCE $SRCGEN_ARGS > $TARGET')
