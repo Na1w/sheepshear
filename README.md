@@ -54,7 +54,7 @@ I'm getting "Cannot map Low memory Globals: Operation not permitted"
    applications from mapping lower memory segments (security?)
    to solve, set the kernel paramater (via sysctl or sysctl.conf)
 
-   vm.mmap_min_addr = 0
+   vm.mmap_min_addr=0
 
 License
 =======

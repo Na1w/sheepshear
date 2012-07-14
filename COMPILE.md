@@ -23,7 +23,8 @@ Installing SCons
 -   `python setup.py install`
 
 ### Haiku
--   Install SCons from Haiku ports
+-   Install SCons from [Haiku ports](http://ports.haiku-files.org)
+-	haikuporter -i scons-2.0.1
 
 ### Windows
 -   Install Python and SCons
