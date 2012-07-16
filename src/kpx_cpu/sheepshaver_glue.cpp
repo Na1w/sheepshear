@@ -60,6 +60,11 @@
 #define DEBUG 0
 #include "debug.h"
 
+extern "C" {
+	#include "dis-asm.h"
+}
+
+
 // Emulation time statistics
 #ifndef EMUL_TIME_STATS
 #define EMUL_TIME_STATS 0
@@ -739,11 +744,40 @@ static void dump_log(void)
 	ppc_cpu->dump_log();
 }
 
-/*
- *  Initialize CPU emulation
- */
 
-sigsegv_return_t sigsegv_handler(sigsegv_info_t *sip)
+/*
+ *  Fault handler
+ */
+static int
+read_mem(bfd_vma memaddr, bfd_byte *myaddr, int length, struct disassemble_info *info)
+{
+	Mac2Host_memcpy(myaddr, memaddr, length);
+	return 0;
+}
+
+
+static void
+dump_disassembly(const uint32 pc, const int prefix_count, const int suffix_count)
+{
+	struct disassemble_info info;
+	INIT_DISASSEMBLE_INFO(info, stderr, fprintf);
+	info.read_memory_func = read_mem;
+	
+	const int count = prefix_count + suffix_count + 1;
+	const uint32 base_addr = pc - prefix_count * 4;
+	
+	fprintf(stderr, "\n======= Disassembly =======\n");
+	for (int i = 0; i < count; i++) {
+		const bfd_vma addr = base_addr + i * 4;
+		fprintf(stderr, "%s0x%8llx:  ", addr == pc ? " >" : "  ", addr);
+		print_insn_ppc(addr, &info);
+		fprintf(stderr, "\n");
+	}	
+}
+
+
+sigsegv_return_t
+sigsegv_handler(sigsegv_info_t *sip)
 {
 	D(bug("%s: called\n", __func__));
 #if ENABLE_VOSF
@@ -802,19 +836,28 @@ sigsegv_return_t sigsegv_handler(sigsegv_info_t *sip)
 #else
 #error "FIXME: You don't have the capability to skip instruction within signal handlers"
 #endif
-
-	fprintf(stderr, "SIGSEGV\n");
+	
+	fprintf(stderr, "\n========= SIGSEGV =========\n");
 	fprintf(stderr, "  pc %p\n", sigsegv_get_fault_instruction_address(sip));
 	fprintf(stderr, "  ea %p\n", sigsegv_get_fault_address(sip));
 	dump_registers();
 	ppc_cpu->dump_log();
+
+	dump_disassembly(pc, 8, 8);
+
+	fprintf(stderr, "\nA segmentation fault has occured resulting in the termination of emulation.\n");
+
 	enter_mon();
 	QuitEmulator();
 
 	return SIGSEGV_RETURN_FAILURE;
 }
 
-void init_emul_ppc(void)
+/*
+ *  Initialize CPU emulation
+ */
+void
+init_emul_ppc(void)
 {
 	D(bug("%s: called\n", __func__));
 	// Get pointer to KernelData in host address space
