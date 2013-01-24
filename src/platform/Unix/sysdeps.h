@@ -92,12 +92,12 @@
 // Always use Real Addressing mode on native architectures
 // Otherwise, use Direct Addressing mode if NATMEM_OFFSET is set
 #if defined(__powerpc__) /* Native PowerPC */
-# define REAL_ADDRESSING 1
+# define DYNAMIC_ADDRESSING 1
 # include "ppc_asm.tmpl"
 #elif defined(NATMEM_OFFSET)
 # define DIRECT_ADDRESSING 1
 #else /* Emulated PowerPC */
-#define REAL_ADDRESSING 1
+#define DYNAMIC_ADDRESSING 1
 #endif
 
 // Always use the complete non-stubs Ethernet driver
@@ -111,7 +111,7 @@
 #define USE_SCRATCHMEM_SUBTERFUGE 0
 #else /* Emulated PowerPC */
 // Mac ROM is write protected when banked memory is used
-#if REAL_ADDRESSING || DIRECT_ADDRESSING
+#if DYNAMIC_ADDRESSING || DIRECT_ADDRESSING
 # define ROM_IS_WRITE_PROTECTED 0
 # define USE_SCRATCHMEM_SUBTERFUGE 1
 #else

@@ -115,7 +115,7 @@
 #include "sigregs.h"
 #include "rpc.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #include "debug.h"
 
 
@@ -163,12 +163,12 @@
 const char ROM_FILE_NAME[] = "ROM";
 const char ROM_FILE_NAME2[] = "Mac OS ROM";
 
-#if !REAL_ADDRESSING
+#if !DYNAMIC_ADDRESSING
 // FIXME: needs to be >= 0x04000000
 const uintptr RAM_BASE = 0x10000000;		// Base address of RAM
 #endif
 const uintptr ROM_BASE = 0x40800000;		// Base address of ROM
-#if REAL_ADDRESSING
+#if DYNAMIC_ADDRESSING
 const uint32 ROM_ALIGNMENT = 0x100000;		// ROM must be aligned to a 1MB boundary
 #endif
 const uint32 SIG_STACK_SIZE = 0x10000;		// Size of signal stack
@@ -722,7 +722,6 @@ static bool init_sdl()
 int main(int argc, char **argv)
 {
 	char str[256];
-	bool memory_mapped_from_zero, ram_rom_areas_contiguous;
 	const char *vmdir = NULL;
 
 	// Initialize variables
@@ -920,49 +919,37 @@ int main(int argc, char **argv)
 		WarningAlert(GetString(STR_SMALL_RAM_WARN));
 		RAMSize = 8*1024*1024;
 	}
-	memory_mapped_from_zero = false;
-	ram_rom_areas_contiguous = false;
-#if REAL_ADDRESSING && HAVE_LINKER_SCRIPT
-	if (vm_mac_acquire_fixed(0, RAMSize) == 0) {
-		D(bug("Could allocate RAM from 0x0000\n"));
-		RAMBase = 0;
-		RAMBaseHost = Mac2HostAddr(RAMBase);
-		memory_mapped_from_zero = true;
+
+#if DYNAMIC_ADDRESSING
+	// Allocate RAM at any address. Since ROM must be higher than RAM, allocate the RAM
+	// and ROM areas contiguously, plus a little extra to allow for ROM address alignment.
+	RAMBaseHost = vm_mac_acquire(RAMSize + ROM_AREA_SIZE + ROM_ALIGNMENT);
+	if (RAMBaseHost == VM_MAP_FAILED) {
+		sprintf(str, GetString(STR_RAM_ROM_MMAP_ERR), strerror(errno));
+		ErrorAlert(str);
+		goto quit;
 	}
-#endif
-	if (!memory_mapped_from_zero) {
-#ifndef PAGEZERO_HACK
-		// Create Low Memory area (0x0000..0x3000)
-		if (vm_mac_acquire_fixed(0, 0x3000) < 0) {
-			sprintf(str, GetString(STR_LOW_MEM_MMAP_ERR), strerror(errno));
-			ErrorAlert(str);
-			goto quit;
-		}
-		lm_area_mapped = true;
-#endif
-#if REAL_ADDRESSING
-		// Allocate RAM at any address. Since ROM must be higher than RAM, allocate the RAM
-		// and ROM areas contiguously, plus a little extra to allow for ROM address alignment.
-		RAMBaseHost = vm_mac_acquire(RAMSize + ROM_AREA_SIZE + ROM_ALIGNMENT);
-		if (RAMBaseHost == VM_MAP_FAILED) {
-			sprintf(str, GetString(STR_RAM_ROM_MMAP_ERR), strerror(errno));
-			ErrorAlert(str);
-			goto quit;
-		}
-		RAMBase = Host2MacAddr(RAMBaseHost);
-		ROMBase = (RAMBase + RAMSize + ROM_ALIGNMENT -1) & -ROM_ALIGNMENT;
-		ROMBaseHost = Mac2HostAddr(ROMBase);
-		ram_rom_areas_contiguous = true;
+	RAMBase = Host2MacAddr(RAMBaseHost);
+	ROMBase = (RAMBase + RAMSize + ROM_ALIGNMENT -1) & -ROM_ALIGNMENT;
+	ROMBaseHost = Mac2HostAddr(ROMBase);
 #else
-		if (vm_mac_acquire_fixed(RAM_BASE, RAMSize) < 0) {
-			sprintf(str, GetString(STR_RAM_MMAP_ERR), strerror(errno));
-			ErrorAlert(str);
-			goto quit;
-		}
-		RAMBase = RAM_BASE;
-		RAMBaseHost = Mac2HostAddr(RAMBase);
-#endif
+	if (vm_mac_acquire_fixed(RAM_BASE, RAMSize) < 0) {
+		sprintf(str, GetString(STR_RAM_MMAP_ERR), strerror(errno));
+		ErrorAlert(str);
+		goto quit;
 	}
+	RAMBase = RAM_BASE;
+	RAMBaseHost = Mac2HostAddr(RAMBase);
+
+	if (vm_mac_acquire_fixed(ROM_BASE, ROM_AREA_SIZE) < 0) {
+		sprintf(str, GetString(STR_ROM_MMAP_ERR), strerror(errno));
+		ErrorAlert(str);
+		goto quit;
+	}
+	ROMBase = ROM_BASE;
+	ROMBaseHost = Mac2HostAddr(ROMBase);
+#endif
+
 #if defined(__powerpc__) /* Native PowerPC */
 	if (vm_protect(RAMBaseHost, RAMSize, VM_PAGE_READ | VM_PAGE_WRITE | VM_PAGE_EXECUTE) < 0) {
 		sprintf(str, GetString(STR_RAM_MMAP_ERR), strerror(errno));
@@ -978,16 +965,6 @@ int main(int argc, char **argv)
 		goto quit;
 	}
 	
-	// Create area for Mac ROM
-	if (!ram_rom_areas_contiguous) {
-		if (vm_mac_acquire_fixed(ROM_BASE, ROM_AREA_SIZE) < 0) {
-			sprintf(str, GetString(STR_ROM_MMAP_ERR), strerror(errno));
-			ErrorAlert(str);
-			goto quit;
-		}
-		ROMBase = ROM_BASE;
-		ROMBaseHost = Mac2HostAddr(ROMBase);
-	}
 #if defined(__powerpc__) /* Native PowerPC */
 	if (vm_protect(ROMBaseHost, ROM_AREA_SIZE, VM_PAGE_READ | VM_PAGE_WRITE | VM_PAGE_EXECUTE) < 0) {
 		sprintf(str, GetString(STR_ROM_MMAP_ERR), strerror(errno));

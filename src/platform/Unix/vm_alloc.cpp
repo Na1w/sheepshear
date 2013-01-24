@@ -88,7 +88,7 @@ typedef unsigned long vm_uintptr_t;
 #ifdef HAVE_MMAP_VM
 #include <sys/mman.h>
 
-#if (defined(__linux__) && defined(__i386__)) || HAVE_LINKER_SCRIPT
+#if (defined(__linux__) && defined(__i386__))
 /* Force a reasonnable address below 0x80000000 on x86 so that we
    don't get addresses above when the program is run on AMD64.
    NOTE: this is empirically determined on Linux/x86.  */

@@ -450,8 +450,8 @@ void SheepShear::StartEmulator(void)
 		throw area_error();
 	}
 
-#if REAL_ADDRESSING
-	bug("Using real addressing.\n");
+#if DYNAMIC_ADDRESSING
+	bug("Using dynamic addressing.\n");
 
 	// Create area for RAM / ROM
 	ram_area = create_area(RAM_AREA_NAME, (void **)&RAMBaseHost, B_ANY_ADDRESS,

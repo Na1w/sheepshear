@@ -45,13 +45,13 @@
 #if defined(__powerpc__) /* Native PowerPC */
 # define WORDS_BIGENDIAN 1
 # define SYSTEM_CLOBBERS_R2 1
-# define REAL_ADDRESSING 1
+# define DYNAMIC_ADDRESSING 1
 #else /* Emulated PowerPC */
 # undef WORDS_BIGENDIAN
 # ifdef NATMEM_OFFSET
 #  define DIRECT_ADDRESSING 1
 # else
-# define REAL_ADDRESSING 1
+# define DYNAMIC_ADDRESSING 1
 # endif
 #endif
 

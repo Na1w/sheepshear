@@ -1704,7 +1704,7 @@ static void DLPI_unit_data(DLPIStream *the_stream, queue_t *q, mblk_t *mp)
  *  Ethernet packet allocator
  */
 
-#if SIZEOF_VOID_P != 4 || REAL_ADDRESSING == 0
+#if SIZEOF_VOID_P != 4 || DYNAMIC_ADDRESSING == 0
 static uint32 ether_packet = 0;			// Ethernet packet (cached allocation)
 static uint32 n_ether_packets = 0;		// Number of ethernet packets allocated so far (should be at most 1)
 

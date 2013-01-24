@@ -41,7 +41,7 @@ if int(use_debug):
 if int(use_sdl):
 	env.Append(CPPDEFINES = ['USE_SDL', 'USE_SDL_AUDIO', 'USE_SDL_VIDEO'])
 
-env.Append(CPPDEFINES = ['_REENTRANT', 'DATADIR=\\"/usr/share/SheepShear\\"','REAL_ADDRESSING=1']);
+env.Append(CPPDEFINES = ['_REENTRANT', 'DATADIR=\\"/usr/share/SheepShear\\"','DYNAMIC_ADDRESSING=1']);
 
 env.Append(CPPPATH = [
 	'#/src/include',

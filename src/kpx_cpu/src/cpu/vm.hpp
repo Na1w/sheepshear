@@ -188,7 +188,7 @@ static inline void vm_do_write_memory_4_reversed(uint32 *a, uint32 v)
 
 typedef uintptr vm_addr_t;
 
-#if REAL_ADDRESSING
+#if DYNAMIC_ADDRESSING
 const uintptr VMBaseDiff = 0;
 #elif DIRECT_ADDRESSING
 #ifdef NATMEM_OFFSET
@@ -203,7 +203,7 @@ const uintptr VMBaseDiff = NATMEM_OFFSET;
 #define vm_wrap_address(ADDR) (ADDR)
 #endif
 
-#if REAL_ADDRESSING || DIRECT_ADDRESSING
+#if DYNAMIC_ADDRESSING || DIRECT_ADDRESSING
 static inline uint8 * vm_do_get_real_address(vm_addr_t addr)
 {
 	return (uint8 *)vm_wrap_address(VMBaseDiff + addr);

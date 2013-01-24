@@ -56,7 +56,7 @@ extern bool ether_driver_opened;
 
 // Ethernet packet allocator (optimized for 32-bit platforms in real addressing mode)
 class EthernetPacket {
-#if SIZEOF_VOID_P == 4 && REAL_ADDRESSING
+#if SIZEOF_VOID_P == 4 && DYNAMIC_ADDRESSING
 	uint8 packet[1516];
  public:
 	uint32 addr(void) const { return (uint32)packet; }

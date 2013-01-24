@@ -831,7 +831,7 @@ static bool open_xf86_dga(int width, int height)
 #else
 	native_byte_order = (XImageByteOrder(x_display) == LSBFirst);
 #endif
-#if REAL_ADDRESSING || DIRECT_ADDRESSING
+#if DYNAMIC_ADDRESSING || DIRECT_ADDRESSING
 	// Screen_blitter_init() returns TRUE if VOSF is mandatory
 	// i.e. the framebuffer update function is not Blit_Copy_Raw
 	use_vosf = Screen_blitter_init(visualFormat, native_byte_order, depth);

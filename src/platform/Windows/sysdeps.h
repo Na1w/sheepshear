@@ -63,7 +63,7 @@
 #endif
 
 // Mac ROM is write protected when banked memory is used
-#if REAL_ADDRESSING || DIRECT_ADDRESSING
+#if DYNAMIC_ADDRESSING || DIRECT_ADDRESSING
 # define ROM_IS_WRITE_PROTECTED 0
 # define USE_SCRATCHMEM_SUBTERFUGE 1
 #else

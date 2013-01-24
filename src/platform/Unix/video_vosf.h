@@ -534,7 +534,7 @@ static void update_display_window_vosf(VIDEO_DRV_WIN_INIT)
  */
 
 #ifndef TEST_VOSF_PERFORMANCE
-#if REAL_ADDRESSING || DIRECT_ADDRESSING
+#if DYNAMIC_ADDRESSING || DIRECT_ADDRESSING
 static void update_display_dga_vosf(VIDEO_DRV_DGA_INIT)
 {
 	VIDEO_MODE_INIT;
